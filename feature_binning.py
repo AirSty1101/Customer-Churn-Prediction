@@ -53,12 +53,12 @@ class FixedBinner(BaseEstimator, TransformerMixin):
             raise ValueError(error_msg)
         logger.debug(f"Age binning successful. Distribution: {X['Age_bin'].value_counts().to_dict()}")
 
-        # === CreditScore ===
+        # === CreditScore (Risk Grade) ===
         logger.debug("Binning CreditScore column...")
         X["CreditScore_bin"] = pd.cut(
             X["CreditScore"],
-            bins=[0, 580, 700, 1000],
-            labels=["Low", "Medium", "High"],
+            bins=[0, 615, 645, 665, 680, 698, 724, 752, 900],
+            labels=["HH", "GG", "FF", "EE", "DD", "CC", "BB", "AA"],
             right=True,
         )
         if X["CreditScore_bin"].isna().any():
