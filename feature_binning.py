@@ -1,64 +1,108 @@
 from __future__ import annotations
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
+from logger_config import setup_logger
+
+# สร้าง logger สำหรับ module นี้
+logger = setup_logger("feature_binning")
+
 
 class FixedBinner(BaseEstimator, TransformerMixin):
     """
     Transformer สำหรับทำ fixed binning ในคอลัมน์ CreditScore, Age, Tenure, Balance
     ใช้ก่อนเข้า OneHotEncoder
+    
+    Raises:
+        ValueError: ถ้าคอลัมน์ที่จำเป็นหายไป หรือมีค่านอกช่วง bins
     """
 
     def __init__(self):
         # คุณสามารถแก้ช่วง bin ได้เองตามต้องการ
-        pass
+        self.required_cols = ["Age", "CreditScore", "Tenure", "Balance"]
+        logger.debug("FixedBinner initialized")
 
     def fit(self, X, y=None):
-        # ไม่มีการเรียนรู้จากข้อมูล
+        logger.debug("FixedBinner.fit() called - no learning required")
         return self
 
     def transform(self, X):
+        logger.debug(f"FixedBinner.transform() called with shape {X.shape}")
         X = X.copy()
 
+        # ตรวจสอบคอลัมน์ที่จำเป็น
+        missing_cols = [col for col in self.required_cols if col not in X.columns]
+        if missing_cols:
+            error_msg = f"Missing required columns for binning: {missing_cols}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        logger.debug(f"All required columns present: {self.required_cols}")
+
         # === Age (ปี) ===
-        # 18–25, 26–35, 36–45, 46–60, 60+
+        logger.debug("Binning Age column...")
         X["Age_bin"] = pd.cut(
             X["Age"],
-            bins=[0, 25, 35, 45, 60, 200],
-            labels=["18-25", "26-35", "36-45", "46-60", "60+"],
+            bins=[0, 20, 30, 40, 50, 60, 200],
+            labels=["<20", "20-30", "31-40", "41-50", "51-60", ">60"],
             right=True,
         )
+        if X["Age_bin"].isna().any():
+            invalid_ages = X.loc[X["Age_bin"].isna(), "Age"].unique()
+            error_msg = f"Invalid Age values found (outside bins): {invalid_ages}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        logger.debug(f"Age binning successful. Distribution: {X['Age_bin'].value_counts().to_dict()}")
 
         # === CreditScore ===
-        # Low <580, Mid 580–700, High >700
+        logger.debug("Binning CreditScore column...")
         X["CreditScore_bin"] = pd.cut(
             X["CreditScore"],
             bins=[0, 580, 700, 1000],
             labels=["Low", "Medium", "High"],
             right=True,
         )
+        if X["CreditScore_bin"].isna().any():
+            invalid_scores = X.loc[X["CreditScore_bin"].isna(), "CreditScore"].unique()
+            error_msg = f"Invalid CreditScore values found (outside bins): {invalid_scores}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        logger.debug(f"CreditScore binning successful. Distribution: {X['CreditScore_bin'].value_counts().to_dict()}")
 
         # === Tenure (ปีที่เป็นลูกค้า) ===
-        # New <2, Mid 2–5, Loyal >5
+        logger.debug("Binning Tenure column...")
         X["Tenure_bin"] = pd.cut(
             X["Tenure"],
             bins=[-1, 1, 5, 20],
             labels=["New", "Mid", "Loyal"],
             right=True,
         )
+        if X["Tenure_bin"].isna().any():
+            invalid_tenure = X.loc[X["Tenure_bin"].isna(), "Tenure"].unique()
+            error_msg = f"Invalid Tenure values found (outside bins): {invalid_tenure}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        logger.debug(f"Tenure binning successful. Distribution: {X['Tenure_bin'].value_counts().to_dict()}")
 
         # === Balance (ยอดเงิน) ===
-        # ธนาคารทั่วไปแบ่ง low/mid/high แบบนี้
+        logger.debug("Binning Balance column...")
         X["Balance_bin"] = pd.cut(
             X["Balance"],
             bins=[-1, 50000, 150000, 1e9],
             labels=["Low", "Medium", "High"],
             right=True,
         )
+        if X["Balance_bin"].isna().any():
+            invalid_balance = X.loc[X["Balance_bin"].isna(), "Balance"].unique()
+            error_msg = f"Invalid Balance values found (outside bins): {invalid_balance}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        logger.debug(f"Balance binning successful. Distribution: {X['Balance_bin'].value_counts().to_dict()}")
 
-        # คืนเฉพาะคอลัมน์ใหม่ (bin) + คอลัมน์อื่น ๆ ที่ไม่ใช่ตัวเลขพวกนี้
-        # แต่เราจะลบคอลัมน์ numeric ดั้งเดิม
-        X = X.drop(columns=["Age", "CreditScore", "Tenure", "Balance"])
-
+        # ลบคอลัมน์ numeric ดั้งเดิม
+        logger.debug(f"Dropping original numeric columns: {self.required_cols}")
+        X = X.drop(columns=self.required_cols)
+        
+        logger.debug(f"FixedBinner.transform() completed. Output shape: {X.shape}")
         return X
 
 if __name__ == "__main__":
