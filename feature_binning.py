@@ -1,4 +1,5 @@
 from __future__ import annotations
+import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from logger_config import setup_logger
@@ -36,8 +37,15 @@ class FixedBinner(BaseEstimator, TransformerMixin):
         
         # เรียนรู้ quantile cutpoints จาก Balance ใน training data
         if "Balance" in X.columns:
-            # คำนวณ quantiles (0%, 25%, 50%, 75%, 100%)
-            self.balance_quantiles_ = X["Balance"].quantile([0, 0.25, 0.5, 0.75, 1.0]).values
+            # คำนวณ quantiles (25%, 50%, 75%) และเพิ่ม min, max
+            # จะได้ 5 bin edges สำหรับ 4 labels
+            quantiles = X["Balance"].quantile([0.25, 0.5, 0.75]).values
+            min_val = X["Balance"].min()
+            # ใช้ inf เพื่อรองรับค่าที่สูงกว่า max ของ training data
+            max_val = np.inf
+            
+            # สร้าง bins: [min, Q1, Q2, Q3, inf]
+            self.balance_quantiles_ = [min_val] + list(quantiles) + [max_val]
             logger.debug(f"Balance quantiles learned: {self.balance_quantiles_}")
         else:
             logger.warning("Balance column not found in training data - quantiles not learned")
@@ -112,13 +120,29 @@ class FixedBinner(BaseEstimator, TransformerMixin):
             logger.error(error_msg)
             raise ValueError(error_msg)
         
+        # ลบ duplicate bins และปรับ labels ให้ตรงกัน
+        unique_bins = np.unique(self.balance_quantiles_)
+        n_bins = len(unique_bins)
+        n_labels = n_bins - 1
+        
+        # สร้าง labels ตามจำนวน bins ที่เหลือ
+        if n_labels == 4:
+            labels = ["Q1-Low", "Q2-Medium-Low", "Q3-Medium-High", "Q4-High"]
+        elif n_labels == 3:
+            labels = ["Low", "Medium", "High"]
+        elif n_labels == 2:
+            labels = ["Low", "High"]
+        else:
+            labels = [f"Q{i+1}" for i in range(n_labels)]
+        
+        logger.debug(f"Using {n_bins} unique bins with {n_labels} labels")
+        
         # ใช้ pd.cut() กับ bins ที่เรียนรู้มาจาก training data
         X["Balance_bin"] = pd.cut(
             X["Balance"],
-            bins=self.balance_quantiles_,
-            labels=["Q1-Low", "Q2-Medium-Low", "Q3-Medium-High", "Q4-High"],
-            include_lowest=True,
-            duplicates='drop'
+            bins=unique_bins,
+            labels=labels,
+            include_lowest=True
         )
         
         if X["Balance_bin"].isna().any():
