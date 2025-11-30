@@ -68,12 +68,12 @@ class FixedBinner(BaseEstimator, TransformerMixin):
             raise ValueError(error_msg)
         logger.debug(f"CreditScore binning successful. Distribution: {X['CreditScore_bin'].value_counts().to_dict()}")
 
-        # === Tenure (ปีที่เป็นลูกค้า) ===
+        # === Tenure (Customer Segment) ===
         logger.debug("Binning Tenure column...")
         X["Tenure_bin"] = pd.cut(
             X["Tenure"],
-            bins=[-1, 1, 5, 20],
-            labels=["New", "Mid", "Loyal"],
+            bins=[-1, 2, 5, 10, 20],
+            labels=["New/At-Risk", "Emerging Loyalty", "Established/Loyal", "Long-Term"],
             right=True,
         )
         if X["Tenure_bin"].isna().any():
