@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # === Path พื้นฐาน ===
-DATA_PATH = r"C:\Users\absat\Desktop\Customer Churn Prediction\data\Churn_Modelling.csv"
+DATA_PATH = r"C:\Users\absat\Desktop\Side Project\Customer Churn Prediction\data\Churn_Modelling.csv"
 
 # === Target & Feature Config ===
 TARGET_COL = "Exited"
@@ -28,3 +28,20 @@ NUMERIC_COLS = [
 TEST_SIZE = 0.15     # 15% สำหรับ test
 VAL_SIZE = 0.15      # 15% สำหรับ val (จากส่วน train ที่เหลือ)
 RANDOM_STATE = 42
+
+# === Model Training Config ===
+MODELS_DIR = "models"  # โฟลเดอร์เก็บ trained models
+PLOTS_DIR = "plots"    # โฟลเดอร์เก็บ visualizations
+
+# Cross-Validation
+CV_FOLDS = 5
+
+# Logistic Regression
+LR_MAX_ITER = 1000
+LR_SOLVER = 'lbfgs'
+
+# XGBoost
+XGB_N_ESTIMATORS = 100
+XGB_MAX_DEPTH = 6
+XGB_LEARNING_RATE = 0.1
+XGB_RANDOM_STATE = 42
