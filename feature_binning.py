@@ -9,8 +9,17 @@ logger = setup_logger("feature_binning")
 
 class FixedBinner(BaseEstimator, TransformerMixin):
     """
-    Transformer สำหรับทำ fixed binning ในคอลัมน์ CreditScore, Age, Tenure, Balance
+    Transformer สำหรับทำ binning ในคอลัมน์ CreditScore, Age, Tenure, Balance
+    - Age, CreditScore, Tenure: Fixed binning (ไม่ต้องเรียนรู้)
+    - Balance: Quantile-based binning (เรียนรู้จาก training data)
+    
     ใช้ก่อนเข้า OneHotEncoder
+    
+    Usage:
+        binner = FixedBinner()
+        binner.fit(X_train)  # เรียนรู้ quantiles จาก training data
+        X_train_binned = binner.transform(X_train)
+        X_test_binned = binner.transform(X_test)  # ใช้ quantiles เดียวกัน
     
     Raises:
         ValueError: ถ้าคอลัมน์ที่จำเป็นหายไป หรือมีค่านอกช่วง bins
@@ -22,7 +31,18 @@ class FixedBinner(BaseEstimator, TransformerMixin):
         logger.debug("FixedBinner initialized")
 
     def fit(self, X, y=None):
-        logger.debug("FixedBinner.fit() called - no learning required")
+        logger.debug("FixedBinner.fit() called - learning Balance quantiles from training data")
+        X = X.copy()
+        
+        # เรียนรู้ quantile cutpoints จาก Balance ใน training data
+        if "Balance" in X.columns:
+            # คำนวณ quantiles (0%, 25%, 50%, 75%, 100%)
+            self.balance_quantiles_ = X["Balance"].quantile([0, 0.25, 0.5, 0.75, 1.0]).values
+            logger.debug(f"Balance quantiles learned: {self.balance_quantiles_}")
+        else:
+            logger.warning("Balance column not found in training data - quantiles not learned")
+            self.balance_quantiles_ = None
+            
         return self
 
     def transform(self, X):
@@ -83,14 +103,24 @@ class FixedBinner(BaseEstimator, TransformerMixin):
             raise ValueError(error_msg)
         logger.debug(f"Tenure binning successful. Distribution: {X['Tenure_bin'].value_counts().to_dict()}")
 
-        # === Balance (ยอดเงิน) ===
-        logger.debug("Binning Balance column...")
+        # === Balance (Quantile-based) ===
+        logger.debug("Binning Balance column using learned quantiles...")
+        
+        # ตรวจสอบว่ามี quantiles ที่เรียนรู้มาหรือไม่
+        if not hasattr(self, 'balance_quantiles_') or self.balance_quantiles_ is None:
+            error_msg = "Balance quantiles not learned. Please call fit() first."
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # ใช้ pd.cut() กับ bins ที่เรียนรู้มาจาก training data
         X["Balance_bin"] = pd.cut(
             X["Balance"],
-            bins=[-1, 50000, 150000, 1e9],
-            labels=["Low", "Medium", "High"],
-            right=True,
+            bins=self.balance_quantiles_,
+            labels=["Q1-Low", "Q2-Medium-Low", "Q3-Medium-High", "Q4-High"],
+            include_lowest=True,
+            duplicates='drop'
         )
+        
         if X["Balance_bin"].isna().any():
             invalid_balance = X.loc[X["Balance_bin"].isna(), "Balance"].unique()
             error_msg = f"Invalid Balance values found (outside bins): {invalid_balance}"
@@ -117,8 +147,9 @@ if __name__ == "__main__":
         "Gender": ["Female", "Female", "Female"]
     })
 
-    # ใช้ transformer
+    # ใช้ transformer (ต้อง fit ก่อน transform)
     binner = FixedBinner()
-    result = binner.transform(df)
+    binner.fit(df)  # เรียนรู้ quantiles จาก training data
+    result = binner.transform(df)  # ใช้ quantiles ที่เรียนรู้มา
 
     print(result)
