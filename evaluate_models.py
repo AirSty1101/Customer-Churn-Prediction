@@ -12,7 +12,7 @@ from pathlib import Path
 from sklearn.metrics import confusion_matrix, roc_curve, auc, precision_recall_curve
 
 from logger_config import setup_logger
-from config import MODELS_DIR, PLOTS_DIR
+from config import MODELS_DIR, PLOTS_DIR, RUN_NUMBER
 
 logger = setup_logger("evaluate_models")
 
@@ -23,16 +23,19 @@ sns.set_palette("husl")
 
 def create_directories():
     """สร้างโฟลเดอร์สำหรับเก็บ plots"""
-    plots_dir = Path(PLOTS_DIR)
-    plots_dir.mkdir(exist_ok=True)
-    logger.info(f"Created directory: {plots_dir}")
+    run_dir = f"run_{RUN_NUMBER}"
+    plots_dir = Path(PLOTS_DIR) / run_dir
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Using plots directory for Run #{RUN_NUMBER}: {plots_dir}")
+    return plots_dir
 
 
 def load_models():
     """โหลด trained models"""
-    models_dir = Path(MODELS_DIR)
+    run_dir = f"run_{RUN_NUMBER}"
+    models_dir = Path(MODELS_DIR) / run_dir
     
-    logger.info("Loading models...")
+    logger.info(f"Loading models from Run #{RUN_NUMBER}...")
     with open(models_dir / "logistic_regression.pkl", 'rb') as f:
         lr_model = pickle.load(f)
     
@@ -161,7 +164,7 @@ if __name__ == "__main__":
     logger.info("="*70)
     
     # สร้างโฟลเดอร์
-    create_directories()
+    plots_dir = create_directories()
     
     # โหลด models
     lr_model, xgb_model, preprocessor = load_models()
@@ -182,7 +185,6 @@ if __name__ == "__main__":
     xgb_pred = xgb_model.predict(X_test_transformed)
     xgb_proba = xgb_model.predict_proba(X_test_transformed)[:, 1]
     
-    plots_dir = Path(PLOTS_DIR)
     
     # 1. Confusion Matrices
     logger.info("Creating confusion matrices...")
