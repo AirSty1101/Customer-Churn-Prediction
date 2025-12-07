@@ -11,23 +11,26 @@ import shap
 from pathlib import Path
 
 from logger_config import setup_logger
-from config import MODELS_DIR, PLOTS_DIR
+from config import MODELS_DIR, PLOTS_DIR, RUN_NUMBER
 
 logger = setup_logger("shap_analysis")
 
 
 def create_directories():
     """สร้างโฟลเดอร์สำหรับเก็บ plots"""
-    plots_dir = Path(PLOTS_DIR)
-    plots_dir.mkdir(exist_ok=True)
-    logger.info(f"Created directory: {plots_dir}")
+    run_dir = f"run_{RUN_NUMBER}"
+    plots_dir = Path(PLOTS_DIR) / run_dir
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Using plots directory for Run #{RUN_NUMBER}: {plots_dir}")
+    return plots_dir
 
 
 def load_model():
     """โหลด XGBoost model และ preprocessor"""
-    models_dir = Path(MODELS_DIR)
+    run_dir = f"run_{RUN_NUMBER}"
+    models_dir = Path(MODELS_DIR) / run_dir
     
-    logger.info("Loading XGBoost model...")
+    logger.info(f"Loading XGBoost model from Run #{RUN_NUMBER}...")
     with open(models_dir / "xgboost.pkl", 'rb') as f:
         xgb_model = pickle.load(f)
     
@@ -133,7 +136,7 @@ if __name__ == "__main__":
     logger.info("="*70)
     
     # สร้างโฟลเดอร์
-    create_directories()
+    plots_dir = create_directories()
     
     # โหลด model
     xgb_model, preprocessor = load_model()
@@ -167,7 +170,6 @@ if __name__ == "__main__":
     shap_values = explainer.shap_values(X_test_dense)
     logger.info(f"SHAP values shape: {shap_values.shape}")
     
-    plots_dir = Path(PLOTS_DIR)
     
     # 1. Summary Plot
     plot_shap_summary(shap_values, X_test_dense, feature_names,
