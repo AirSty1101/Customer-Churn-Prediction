@@ -18,7 +18,7 @@ import xgboost as xgb
 from data_prep import get_prepared_data
 from logger_config import setup_logger
 from config import (
-    MODELS_DIR, CV_FOLDS, RANDOM_STATE,
+    MODELS_DIR, PLOTS_DIR, RUN_NUMBER, CV_FOLDS, RANDOM_STATE,
     LR_MAX_ITER, LR_SOLVER,
     XGB_N_ESTIMATORS, XGB_MAX_DEPTH, XGB_LEARNING_RATE, XGB_RANDOM_STATE
 )
@@ -27,10 +27,19 @@ logger = setup_logger("train_models")
 
 
 def create_directories():
-    """สร้างโฟลเดอร์สำหรับเก็บ models"""
-    models_dir = Path(MODELS_DIR)
-    models_dir.mkdir(exist_ok=True)
-    logger.info(f"Created directory: {models_dir}")
+    """สร้างโฟลเดอร์สำหรับเก็บ models และ plots ตาม run number"""
+    run_dir = f"run_{RUN_NUMBER}"
+    models_dir = Path(MODELS_DIR) / run_dir
+    plots_dir = Path(PLOTS_DIR) / run_dir
+    
+    models_dir.mkdir(parents=True, exist_ok=True)
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"Created directories for Run #{RUN_NUMBER}")
+    logger.info(f"  Models: {models_dir}")
+    logger.info(f"  Plots: {plots_dir}")
+    
+    return models_dir, plots_dir
 
 
 def calculate_metrics(y_true, y_pred, y_pred_proba):
@@ -170,10 +179,8 @@ def train_xgboost(X_train, y_train, X_val, y_val, X_test, y_test):
     return xgb_model, cv_scores, val_metrics, test_metrics
 
 
-def save_models(lr_model, xgb_model, preprocessor):
+def save_models(lr_model, xgb_model, preprocessor, models_dir):
     """Save trained models"""
-    models_dir = Path(MODELS_DIR)
-    
     # Save Logistic Regression
     lr_path = models_dir / "logistic_regression.pkl"
     with open(lr_path, 'wb') as f:
@@ -191,6 +198,19 @@ def save_models(lr_model, xgb_model, preprocessor):
     with open(prep_path, 'wb') as f:
         pickle.dump(preprocessor, f)
     logger.info(f"Saved Preprocessor to {prep_path}")
+    
+    # Save run info
+    info_path = models_dir / "run_info.txt"
+    with open(info_path, 'w') as f:
+        f.write(f"Run Number: {RUN_NUMBER}\n")
+        f.write(f"Date: {pd.Timestamp.now()}\n")
+        f.write(f"\nConfiguration:\n")
+        f.write(f"  LR max_iter: {LR_MAX_ITER}\n")
+        f.write(f"  LR solver: {LR_SOLVER}\n")
+        f.write(f"  XGB n_estimators: {XGB_N_ESTIMATORS}\n")
+        f.write(f"  XGB max_depth: {XGB_MAX_DEPTH}\n")
+        f.write(f"  XGB learning_rate: {XGB_LEARNING_RATE}\n")
+    logger.info(f"Saved run info to {info_path}")
 
 
 def print_comparison(lr_test_metrics, xgb_test_metrics):
@@ -214,7 +234,7 @@ if __name__ == "__main__":
     logger.info("="*70)
     
     # สร้างโฟลเดอร์
-    create_directories()
+    models_dir, plots_dir = create_directories()
     
     # โหลดและเตรียมข้อมูล
     logger.info("Loading and preparing data...")
@@ -246,7 +266,7 @@ if __name__ == "__main__":
     )
     
     # Save models
-    save_models(lr_model, xgb_model, preprocessor)
+    save_models(lr_model, xgb_model, preprocessor, models_dir)
     
     # Print comparison
     print_comparison(lr_test_metrics, xgb_test_metrics)
