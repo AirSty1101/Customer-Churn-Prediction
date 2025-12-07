@@ -4,3 +4,4 @@ venv/
 models/
 *.txt
 !requirements.txt
+*.png
