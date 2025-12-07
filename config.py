@@ -33,6 +33,9 @@ RANDOM_STATE = 42
 MODELS_DIR = "models"  # โฟลเดอร์เก็บ trained models
 PLOTS_DIR = "plots"    # โฟลเดอร์เก็บ visualizations
 
+# Run Number (เปลี่ยนทุกครั้งที่รัน experiment ใหม่)
+RUN_NUMBER = 1
+
 # Cross-Validation
 CV_FOLDS = 5
 
