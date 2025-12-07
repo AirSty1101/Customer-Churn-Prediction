@@ -270,6 +270,8 @@ Estimated from metrics:
 
 **Logistic Regression** (`confusion_matrix_lr.png`)
 
+![Confusion Matrix - Logistic Regression](../plots/run_1/confusion_matrix_lr.png)
+
 ```
               Predicted
               Not Churn  Churn
@@ -286,12 +288,16 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 
 **XGBoost** (`confusion_matrix_xgb.png`)
 
+![Confusion Matrix - XGBoost](../plots/run_1/confusion_matrix_xgb.png)
+
 - Recall ต่ำกว่า LR (61% vs 70%)
 - False Positive ยังสูงอยู่
 
 ---
 
 ##### 2. ROC Curves (`roc_curves.png`)
+
+![ROC Curves Comparison](../plots/run_1/roc_curves.png)
 
 **ROC Curve คืออะไร:**
 
@@ -315,6 +321,8 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 
 ##### 3. Precision-Recall Curves (`precision_recall_curves.png`)
 
+![Precision-Recall Curves](../plots/run_1/precision_recall_curves.png)
+
 **PR Curve คืออะไร:**
 
 - แกน X = Recall (จับ Churn ได้กี่ %)
@@ -335,6 +343,8 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 ---
 
 ##### 4. Feature Importance - Logistic Regression (`feature_importance_lr.png`)
+
+![Feature Importance - Logistic Regression](../plots/run_1/feature_importance_lr.png)
 
 **Top 15 Features ที่มีผลต่อการทำนาย:**
 
@@ -360,6 +370,8 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 
 ##### 5. Feature Importance - XGBoost (`feature_importance_xgb.png`)
 
+![Feature Importance - XGBoost](../plots/run_1/feature_importance_xgb.png)
+
 **Top Features (by weight):**
 
 - คล้ายกับ LR แต่ ranking อาจต่างกัน
@@ -368,6 +380,8 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 ---
 
 ##### 6. SHAP Summary Plot (`shap_summary.png`)
+
+![SHAP Summary Plot](../plots/run_1/shap_summary.png)
 
 **SHAP คืออะไร:**
 
@@ -391,6 +405,8 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 ---
 
 ##### 7. SHAP Bar Plot (`shap_bar.png`)
+
+![SHAP Bar Plot](../plots/run_1/shap_bar.png)
 
 **Mean Absolute SHAP Value:**
 
@@ -416,10 +432,14 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 
 **Sample 0** (`shap_waterfall_sample0.png`)
 
+![SHAP Waterfall - Sample 0](../plots/run_1/shap_waterfall_sample0.png)
+
 - แสดงการทำนายของลูกค้าคนแรก
 - เห็นว่า feature ไหนผลักให้ทำนาย Churn หรือ Not Churn
 
 **Churned Customer** (`shap_waterfall_churn.png`)
+
+![SHAP Waterfall - Churned Customer](../plots/run_1/shap_waterfall_churn.png)
 
 - ตัวอย่างลูกค้าที่ทำนายว่า Churn
 - เห็นว่า Age, NumOfProducts, IsActiveMember มีผลอย่างไร
@@ -434,6 +454,8 @@ Churn          ~93       ~213    ← True Positives (ทำนายถูก!)
 ---
 
 ##### 9. SHAP Dependence Plot (`shap_dependence_top.png`)
+
+![SHAP Dependence Plot](../plots/run_1/shap_dependence_top.png)
 
 **แสดงความสัมพันธ์:**
 
