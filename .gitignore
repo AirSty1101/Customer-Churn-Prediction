@@ -3,3 +3,4 @@ data/
 venv/
 models/
 *.txt
+!requirements.txt
