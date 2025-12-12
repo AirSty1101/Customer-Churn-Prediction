@@ -42,11 +42,15 @@ def load_models():
     with open(models_dir / "xgboost.pkl", 'rb') as f:
         xgb_model = pickle.load(f)
     
-    with open(models_dir / "preprocessor.pkl", 'rb') as f:
-        preprocessor = pickle.load(f)
+    # โหลดทั้ง 2 preprocessors
+    with open(models_dir / "preprocessor_lr.pkl", 'rb') as f:
+        preprocessor_lr = pickle.load(f)
     
-    logger.info("Models loaded successfully")
-    return lr_model, xgb_model, preprocessor
+    with open(models_dir / "preprocessor_xgb.pkl", 'rb') as f:
+        preprocessor_xgb = pickle.load(f)
+    
+    logger.info("Models and preprocessors loaded successfully")
+    return lr_model, xgb_model, preprocessor_lr, preprocessor_xgb
 
 
 def plot_confusion_matrix(y_true, y_pred, model_name, save_path):
@@ -166,24 +170,28 @@ if __name__ == "__main__":
     # สร้างโฟลเดอร์
     plots_dir = create_directories()
     
-    # โหลด models
-    lr_model, xgb_model, preprocessor = load_models()
+    # โหลด models และ preprocessors
+    lr_model, xgb_model, preprocessor_lr, preprocessor_xgb = load_models()
     
     # โหลดข้อมูล test (ต้อง import และ transform)
     from data_prep import get_prepared_data
     logger.info("Loading test data...")
-    X_train, X_val, X_test, y_train, y_val, y_test, _ = get_prepared_data()
+    X_train, X_val, X_test, y_train, y_val, y_test, _, _ = get_prepared_data()
     
-    # Transform
-    X_test_transformed = preprocessor.transform(X_test)
+    # Transform ด้วย preprocessor ที่เหมาะสม
+    logger.info("Transforming test data...")
+    X_test_lr = preprocessor_lr.transform(X_test)
+    X_test_xgb = preprocessor_xgb.transform(X_test)
+    
+    logger.info(f"LR features: {X_test_lr.shape[1]}, XGBoost features: {X_test_xgb.shape[1]}")
     
     # Predictions
     logger.info("Generating predictions...")
-    lr_pred = lr_model.predict(X_test_transformed)
-    lr_proba = lr_model.predict_proba(X_test_transformed)[:, 1]
+    lr_pred = lr_model.predict(X_test_lr)
+    lr_proba = lr_model.predict_proba(X_test_lr)[:, 1]
     
-    xgb_pred = xgb_model.predict(X_test_transformed)
-    xgb_proba = xgb_model.predict_proba(X_test_transformed)[:, 1]
+    xgb_pred = xgb_model.predict(X_test_xgb)
+    xgb_proba = xgb_model.predict_proba(X_test_xgb)[:, 1]
     
     
     # 1. Confusion Matrices
@@ -207,7 +215,7 @@ if __name__ == "__main__":
     logger.info("Creating feature importance plots...")
     
     # สำหรับ LR ต้องดึง feature names จาก preprocessor
-    feature_names = preprocessor.named_steps['encoder'].get_feature_names_out()
+    feature_names = preprocessor_lr.named_steps['encoder'].get_feature_names_out()
     plot_feature_importance_lr(lr_model, feature_names, 
                               plots_dir / "feature_importance_lr.png")
     
@@ -218,3 +226,4 @@ if __name__ == "__main__":
     logger.info("EVALUATION COMPLETE!")
     logger.info(f"All plots saved to: {plots_dir.absolute()}")
     logger.info("="*70)
+
