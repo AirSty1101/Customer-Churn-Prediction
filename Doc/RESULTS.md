@@ -1032,21 +1032,232 @@ Base value: E[f(X)] = 0.001 (≈ 0%)
    - Voting Classifier: รวม LR + XGBoost
    - Stacking: ใช้ meta-model
 
-#### Visualizations
+#### Visualizations & Analysis
 
 **📁 Location:** `plots/run_2/`
 
-- ✅ `confusion_matrix_lr.png` - Confusion Matrix (Logistic Regression)
-- ✅ `confusion_matrix_xgb.png` - Confusion Matrix (XGBoost)
-- ✅ `roc_curves.png` - ROC Curves Comparison
-- ✅ `precision_recall_curves.png` - Precision-Recall Curves
-- ✅ `feature_importance_lr.png` - Feature Importance (LR Coefficients)
-- ✅ `feature_importance_xgb.png` - Feature Importance (XGBoost)
-- ✅ `shap_summary.png` - SHAP Summary Plot (10 features - อ่านง่ายกว่า Run #1)
-- ✅ `shap_bar.png` - SHAP Feature Importance
-- ✅ `shap_waterfall_sample0.png` - SHAP Waterfall (Sample 0)
-- ✅ `shap_waterfall_churn.png` - SHAP Waterfall (Churned Customer)
-- ✅ `shap_dependence_top.png` - SHAP Dependence Plot
+##### 1. Confusion Matrices
+
+**Logistic Regression:**
+
+<img src="../plots/run_2/confusion_matrix_lr.png" alt="Confusion Matrix - Logistic Regression" width="600">
+
+**Insights:**
+
+- TP = 213, FP = 294, FN = 93, TN = 900
+- Recall = 69.6% - จับ Churn ได้ดี
+- Precision = 38.9% - False Positive ยังสูง
+- เหมือน Run #1 (ใช้ preprocessing เดียวกัน)
+
+**XGBoost:**
+
+<img src="../plots/run_2/confusion_matrix_xgb.png" alt="Confusion Matrix - XGBoost" width="600">
+
+**Insights:**
+
+- ✅ **TP = 211** - จับ Churn ได้ 68.9%
+- ✅ **FP = 223** - ลดลงจาก Run #1 (294 → 223) 🎉
+- ✅ **Precision ดีขึ้นมาก** - 48.6% (จาก 35% ใน Run #1)
+- ⚠️ FN = 95 - พลาด Churn 95 คน
+
+**เปรียบเทียบ LR vs XGBoost:**
+
+- XGBoost มี Precision สูงกว่า (48.6% vs 38.9%)
+- XGBoost มี False Positive น้อยกว่า (223 vs 294)
+- **XGBoost เหมาะกว่าสำหรับการใช้งานจริง**
+
+---
+
+##### 2. ROC Curves
+
+<img src="../plots/run_2/roc_curves.png" alt="ROC Curves Comparison" width="600">
+
+**Insights:**
+
+- **XGBoost AUC = 0.838** 🎯 เกินเป้าหมาย 0.80!
+- Logistic Regression AUC = 0.762
+- **XGBoost ดีกว่า LR อย่างชัดเจน** (ต่างกัน 7.6%)
+- เส้น XGBoost โค้งเข้าหามุมซ้ายบนมากกว่า = แยก class ได้ดีกว่า
+
+**ความหมาย:**
+
+- AUC = 0.838 หมายถึง ถ้าสุ่มลูกค้า Churn 1 คน และ Not Churn 1 คน
+- Model จะให้ score สูงกว่าสำหรับลูกค้า Churn ถูกต้อง 83.8% ของเวลา
+
+---
+
+##### 3. Precision-Recall Curves
+
+<img src="../plots/run_2/precision_recall_curves.png" alt="Precision-Recall Curves" width="600">
+
+**Insights:**
+
+- XGBoost curve อยู่เหนือ LR = ดีกว่าในทุก threshold
+- **Trade-off ชัดเจน:** Recall สูง → Precision ต่ำ
+- ที่ Recall = 70%, XGBoost ได้ Precision ~48% (LR ได้แค่ ~39%)
+
+**การใช้งาน:**
+
+- ถ้าต้องการ Recall 80% → Precision จะลดเหลือ ~35-40%
+- ถ้าต้องการ Precision 60% → Recall จะลดเหลือ ~50-55%
+
+---
+
+##### 4. Feature Importance - Logistic Regression
+
+<img src="../plots/run_2/feature_importance_lr.png" alt="Feature Importance - LR" width="600">
+
+**Top Features (เหมือน Run #1):**
+
+**🔴 Negative (ลด Churn):**
+
+1. Age*bin*<20 (-1.8)
+2. Age_bin_20-30 (-0.8)
+3. Gender_Male (-0.3)
+
+**🟢 Positive (เพิ่ม Churn):**
+
+1. Age_bin_51-60 (+1.6)
+2. Age_bin_41-50 (+0.9)
+3. Geography_Germany (+0.5)
+
+---
+
+##### 5. Feature Importance - XGBoost
+
+<img src="../plots/run_2/feature_importance_xgb.png" alt="Feature Importance - XGBoost" width="600">
+
+**🎯 ข้อดีของ Label Encoding:**
+
+- แสดง feature names จริง (ไม่ใช่ f0, f1, f2...)
+- เห็นความสำคัญของแต่ละ feature ได้ชัดเจน
+- **Geography และ Gender เป็น 1 feature** (ไม่แยกเป็น 3 และ 2 features)
+
+**Top Features:**
+
+1. Age
+2. Geography
+3. Balance
+4. NumOfProducts
+5. IsActiveMember
+
+---
+
+##### 6. SHAP Summary Plot
+
+<img src="../plots/run_2/shap_summary.png" alt="SHAP Summary Plot" width="600">
+
+**🎉 ความแตกต่างจาก Run #1:**
+
+**Run #1 (OneHot):**
+
+- Geography แยกเป็น 3 features (France, Germany, Spain)
+- Gender แยกเป็น 2 features (Male, Female)
+- รวม ~25 features - **อ่านยาก**
+
+**Run #2 (Label Encoding):**
+
+- Geography = 1 feature (0=France, 1=Germany, 2=Spain)
+- Gender = 1 feature (0=Female, 1=Male)
+- รวม 10 features - **อ่านง่ายกว่ามาก!** ✅
+
+**Top 10 Features by SHAP:**
+
+1. **Age** - สำคัญที่สุด (อายุมาก = Churn สูง)
+2. **NumOfProducts** - จำนวน products มีผลมาก
+3. **IsActiveMember** - ไม่ active = Churn สูง
+4. **Geography** - เยอรมัน Churn สูงกว่า
+5. **Balance** - ยอดเงินมีผลปานกลาง
+6. **Gender** - ผู้หญิง Churn สูงกว่าเล็กน้อย
+7. **EstimatedSalary**
+8. **CreditScore**
+9. **Tenure**
+10. **HasCrCard**
+
+**Insights:**
+
+- **Age เป็นปัจจัยสำคัญที่สุด** - consistent กับ LR
+- **NumOfProducts** สำคัญมาก - ลูกค้าที่มี 3-4 products มี Churn สูง
+- **IsActiveMember** - ลูกค้าที่ไม่ active มี Churn สูงมาก
+
+---
+
+##### 7. SHAP Bar Plot
+
+<img src="../plots/run_2/shap_bar.png" alt="SHAP Bar Plot" width="600">
+
+**Mean Absolute SHAP Value:**
+
+- แสดงขนาดของผลกระทบ (ไม่สนใจทิศทาง)
+- ยิ่งสูง = feature นั้นสำคัญมาก
+
+**Top 5:**
+
+1. Age
+2. NumOfProducts
+3. IsActiveMember
+4. Geography
+5. Balance
+
+---
+
+##### 8. SHAP Waterfall Plots
+
+**Sample 0 (ลูกค้าทั่วไป):**
+
+<img src="../plots/run_2/shap_waterfall_sample0.png" alt="SHAP Waterfall - Sample 0" width="600">
+
+**อ่านกราฟอย่างไร:**
+
+- Base value = ความน่าจะเป็นเฉลี่ย
+- แท่งสีแดง (→) = เพิ่มโอกาส Churn
+- แท่งสีน้ำเงิน (←) = ลดโอกาส Churn
+- Final value = prediction สุดท้าย
+
+**Churned Customer:**
+
+<img src="../plots/run_2/shap_waterfall_churn.png" alt="SHAP Waterfall - Churned Customer" width="600">
+
+**Insights:**
+
+- เห็นว่า feature ไหนผลักให้ลูกค้าคนนี้ Churn
+- ช่วยเข้าใจ individual predictions
+- ใช้อธิบายให้ business team ได้
+
+---
+
+##### 9. SHAP Dependence Plot
+
+<img src="../plots/run_2/shap_dependence_top.png" alt="SHAP Dependence Plot" width="600">
+
+**Insights:**
+
+- แสดงความสัมพันธ์ระหว่างค่าของ feature กับ SHAP value
+- เห็น interaction effects ระหว่าง features
+- ช่วยเข้าใจว่า feature มีผลต่อ prediction อย่างไร
+
+---
+
+#### 📊 สรุปจาก Visualizations
+
+**🎯 ปัจจัยหลักที่ทำให้ Churn:**
+
+1. **อายุมาก** (40+, โดยเฉพาะ 51-60)
+2. **ไม่ Active**
+3. **มี Products มาก** (3-4 products)
+4. **เป็นลูกค้าเยอรมัน**
+5. **ผู้หญิง** (เล็กน้อย)
+
+**💡 Actionable Insights สำหรับธนาคาร:**
+
+1. **กลุ่มเสี่ยงสูง:** อายุ 50+, ไม่ Active, มี 3-4 Products
+2. **การป้องกัน:**
+   - เพิ่ม engagement กับลูกค้าที่ไม่ Active
+   - Review product portfolio - ทำไมลูกค้าที่มี products เยอะถึง Churn?
+   - ดูแลลูกค้าอายุมากเป็นพิเศษ
+3. **ตลาดเยอรมัน:** ต้องมีกลยุทธ์พิเศษ - ทำไม Churn สูงกว่าประเทศอื่น?
+
+---
 
 ---
 
