@@ -10,7 +10,8 @@
 - [📝 Run #1 - Baseline (2025-12-07)](#run-1---2025-12-07-baseline-class-weights-only)
 - [📝 Run #2 - Separate Preprocessing (2025-12-12)](#run-2---2025-12-12-separate-preprocessing-lr-vs-xgboost) ⭐ **Latest**
 - [📈 สรุปการเปรียบเทียบ](#-สรปการเปรยบเทยบ)
-- [💡 แนวทางปรับปรุง](#-แนวทางปรบปรง)
+- [� Planned Experiments (Run #3-7)](#-planned-experiments-imbalanced-data-handling-techniques) 🆕
+- [�💡 แนวทางปรับปรุง](#-แนวทางปรบปรง)
 
 ---
 
@@ -1069,10 +1070,242 @@ Base value: E[f(X)] = 0.001 (≈ 0%)
 - [x] **Separate Preprocessing for LR vs XGBoost** - สำเร็จ! XGBoost ดีขึ้น 15% ใน ROC-AUC
 - [x] **Achieve ROC-AUC > 0.80** - สำเร็จ! ได้ 0.8379
 
-**🎯 Next Steps:**
+---
 
-- [ ] **Threshold tuning** เพื่อเพิ่ม Recall หรือ Precision ตามความต้องการทางธุรกิจ
-- [ ] **Hyperparameter tuning** (GridSearch/RandomSearch) เพื่อ optimize XGBoost ให้ดียิ่งขึ้น
-- [ ] **Ensemble methods** - ลอง Voting Classifier หรือ Stacking
-- [ ] **Feature engineering เพิ่มเติม** - interaction features, polynomial features
-- [ ] **Deploy model** - สร้าง API หรือ web app สำหรับใช้งานจริง
+## 🔬 Planned Experiments: Imbalanced Data Handling Techniques
+
+### Run #3: SMOTE (Synthetic Minority Over-sampling Technique)
+
+**Objective:** ทดสอบว่า SMOTE จะช่วยเพิ่ม Recall ได้ไหม
+
+**Approach:**
+
+- ใช้ `imblearn.over_sampling.SMOTE`
+- สร้าง synthetic samples สำหรับ minority class (Churn)
+- Apply หลัง preprocessing, ก่อน training
+
+**Expected Results:**
+
+- Recall อาจเพิ่มขึ้น 5-10%
+- Precision อาจลดลงเล็กน้อย (trade-off)
+- ROC-AUC อาจเพิ่มขึ้น 1-3%
+
+**Implementation:**
+
+```python
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
+
+smote = SMOTE(random_state=42, sampling_strategy='auto')
+```
+
+**Pros:**
+
+- ✅ ไม่ duplicate ข้อมูล - สร้าง synthetic samples ใหม่
+- ✅ ช่วยให้ model เรียนรู้ minority class ได้ดีขึ้น
+- ✅ ใช้งานง่าย, มี library รองรับดี
+
+**Cons:**
+
+- ⚠️ อาจสร้าง noise ถ้ามี outliers
+- ⚠️ Training time นานขึ้น
+- ⚠️ อาจ overfit ถ้าใช้มากเกินไป
+
+---
+
+### Run #4: ADASYN (Adaptive Synthetic Sampling)
+
+**Objective:** เปรียบเทียบกับ SMOTE - ดูว่า adaptive sampling ดีกว่าไหม
+
+**Approach:**
+
+- ใช้ `imblearn.over_sampling.ADASYN`
+- Focus ที่ samples ที่ยากเรียนรู้
+- สร้าง synthetic samples มากขึ้นในบริเวณที่ model ทำนายผิด
+
+**Expected Results:**
+
+- อาจดีกว่า SMOTE สำหรับ decision boundary ที่ซับซ้อน
+- Recall อาจสูงกว่า SMOTE เล็กน้อย
+
+**Implementation:**
+
+```python
+from imblearn.over_sampling import ADASYN
+
+adasyn = ADASYN(random_state=42, sampling_strategy='auto')
+```
+
+**Pros:**
+
+- ✅ Adaptive - ปรับตามความยากของข้อมูล
+- ✅ ดีกว่า SMOTE สำหรับข้อมูลที่มี complex patterns
+
+**Cons:**
+
+- ⚠️ อาจสร้าง noise มากกว่า SMOTE
+- ⚠️ Sensitive ต่อ outliers มากกว่า
+
+---
+
+### Run #5: Hybrid (Random Under-sampling + Over-sampling)
+
+**Objective:** Balance ระหว่าง under-sampling และ over-sampling
+
+**Approach:**
+
+- ใช้ `imblearn.combine.SMOTETomek` หรือ `SMOTEENN`
+- Over-sample minority class ด้วย SMOTE
+- Under-sample majority class ด้วย Tomek links หรือ ENN
+- ลด noise และ redundant samples
+
+**Expected Results:**
+
+- Balanced dataset ที่มีคุณภาพดีกว่า pure over-sampling
+- Training เร็วกว่า (เพราะข้อมูลน้อยลง)
+- อาจได้ Precision ดีกว่า SMOTE
+
+**Implementation:**
+
+```python
+from imblearn.combine import SMOTETomek, SMOTEENN
+
+# Option 1: SMOTE + Tomek Links
+smote_tomek = SMOTETomek(random_state=42)
+
+# Option 2: SMOTE + Edited Nearest Neighbors
+smote_enn = SMOTEENN(random_state=42)
+```
+
+**Pros:**
+
+- ✅ ลด noise จาก majority class
+- ✅ Dataset ที่ clean กว่า
+- ✅ Training เร็วขึ้น
+
+**Cons:**
+
+- ⚠️ อาจสูญเสียข้อมูลที่มีประโยชน์
+- ⚠️ ซับซ้อนกว่า pure over-sampling
+
+---
+
+### Run #6: Focal Loss
+
+**Objective:** ใช้ loss function ที่ focus ที่ hard examples
+
+**Approach:**
+
+- Implement Focal Loss สำหรับ XGBoost
+- ลด weight ของ easy examples
+- เพิ่ม weight ของ hard-to-classify examples
+
+**Expected Results:**
+
+- Model focus ที่ samples ที่ยากเรียนรู้
+- อาจเพิ่ม Recall สำหรับ edge cases
+
+**Implementation:**
+
+```python
+# Custom objective function for XGBoost
+def focal_loss(y_true, y_pred, gamma=2.0, alpha=0.25):
+    # Focal Loss implementation
+    pass
+
+xgb_model = xgb.XGBClassifier(
+    objective=focal_loss,
+    # ... other params
+)
+```
+
+**Pros:**
+
+- ✅ Focus ที่ hard examples
+- ✅ ลด overfitting จาก easy examples
+- ✅ เหมาะกับ highly imbalanced data
+
+**Cons:**
+
+- ⚠️ ต้อง implement custom objective
+- ⚠️ Hyperparameter tuning ยากขึ้น (gamma, alpha)
+- ⚠️ อาจไม่ stable เท่า standard loss
+
+---
+
+### Run #7: Cost-Sensitive Learning
+
+**Objective:** กำหนด cost ที่แตกต่างกันสำหรับ errors แต่ละประเภท
+
+**Approach:**
+
+- กำหนด cost matrix:
+  - False Negative (พลาด Churn) = cost สูง (เช่น 10)
+  - False Positive (ทำนาย Churn ผิด) = cost ต่ำ (เช่น 1)
+- ใช้ `sample_weight` ใน XGBoost
+
+**Expected Results:**
+
+- Model จะพยายามลด False Negative มากขึ้น
+- Recall เพิ่มขึ้น
+- Precision อาจลดลง (trade-off)
+
+**Implementation:**
+
+```python
+# สร้าง sample weights ตาม cost
+sample_weights = np.where(y_train == 1, 10, 1)
+
+xgb_model.fit(
+    X_train, y_train,
+    sample_weight=sample_weights
+)
+```
+
+**Pros:**
+
+- ✅ สะท้อนความสำคัญทางธุรกิจ
+- ✅ Flexible - ปรับ cost ได้ตามต้องการ
+- ✅ ใช้งานง่าย
+
+**Cons:**
+
+- ⚠️ ต้องกำหนด cost ที่เหมาะสม
+- ⚠️ อาจ bias ไปทาง minority class มากเกินไป
+
+---
+
+## 📊 Experiment Comparison Plan
+
+หลังจากทำ Run #3-7 เสร็จ จะเปรียบเทียบ:
+
+| Run | Technique                | Focus Metric | Expected Improvement |
+| --- | ------------------------ | ------------ | -------------------- |
+| #2  | Class Weights (Baseline) | ROC-AUC      | 0.8379               |
+| #3  | SMOTE                    | Recall       | +5-10%               |
+| #4  | ADASYN                   | Recall       | +5-10%               |
+| #5  | Hybrid (SMOTETomek)      | Precision    | +3-5%                |
+| #6  | Focal Loss               | Hard Cases   | +2-5%                |
+| #7  | Cost-Sensitive Learning  | Recall       | +5-10%               |
+
+**Evaluation Criteria:**
+
+- ROC-AUC (primary)
+- Recall (secondary - สำคัญสำหรับ Churn)
+- Precision (tertiary)
+- F1 Score
+- Training Time
+- Model Stability (CV std)
+
+---
+
+## 🎯 Next Immediate Steps
+
+- [ ] **Run #3: SMOTE** - เริ่มจากเทคนิคที่ popular ที่สุด
+- [ ] **Run #4: ADASYN** - เปรียบเทียบกับ SMOTE
+- [ ] **Run #5: Hybrid** - ทดสอบ combined approach
+- [ ] **Run #6: Focal Loss** - Advanced technique
+- [ ] **Run #7: Cost-Sensitive** - Business-oriented approach
+- [ ] **Threshold tuning** - หลังจากเลือก best technique แล้ว
+- [ ] **Hyperparameter tuning** - Fine-tune best model
+- [ ] **Deploy model** - สร้าง API หรือ web app
