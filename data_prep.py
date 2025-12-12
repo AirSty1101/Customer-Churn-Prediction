@@ -17,7 +17,7 @@ from config import (
     VAL_SIZE,
     RANDOM_STATE,
 )
-from feature_binning import FixedBinner
+from feature_binning import FixedBinnerForLR, FixedBinnerForXGBoost
 from logger_config import setup_logger
 
 # สร้าง logger สำหรับ module นี้
@@ -131,19 +131,19 @@ def train_val_test_split(df: pd.DataFrame):
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
-def build_preprocess_pipeline():
+def build_preprocess_pipeline_lr():
     """
-    สร้าง preprocessing pipeline ที่ทำงาน 2 ขั้นตอน:
+    สร้าง preprocessing pipeline สำหรับ Logistic Regression:
     1. Binning: แปลง numeric features เป็น categorical bins
     2. OneHot Encoding: encode ทั้ง categorical เดิม + binned features
     
     Returns:
-        Pipeline: sklearn pipeline object
+        Pipeline: sklearn pipeline object for Logistic Regression
     """
-    logger.debug("Entering build_preprocess_pipeline()")
-    logger.info("Building preprocessing pipeline...")
+    logger.debug("Entering build_preprocess_pipeline_lr()")
+    logger.info("Building preprocessing pipeline for Logistic Regression...")
     
-    # คอลัมน์ binned ที่จะถูกสร้างจาก FixedBinner
+    # คอลัมน์ binned ที่จะถูกสร้างจาก FixedBinnerForLR
     binned_cols = ["Age_bin", "CreditScore_bin", "Tenure_bin", "Balance_bin"]
     logger.debug(f"Binned columns: {binned_cols}")
     
@@ -155,7 +155,7 @@ def build_preprocess_pipeline():
     preprocessor = Pipeline(
         steps=[
             # ขั้นที่ 1: ทำ binning ทั้งหมดก่อน
-            ("binner", FixedBinner()),
+            ("binner", FixedBinnerForLR()),
             
             # ขั้นที่ 2: OneHot encode categorical columns
             ("encoder", ColumnTransformer(
@@ -167,7 +167,33 @@ def build_preprocess_pipeline():
         ]
     )
 
-    logger.info("Pipeline created successfully")
+    logger.info("LR Pipeline created successfully")
+    logger.debug(f"Pipeline steps: {[step[0] for step in preprocessor.steps]}")
+    
+    return preprocessor
+
+
+def build_preprocess_pipeline_xgb():
+    """
+    สร้าง preprocessing pipeline สำหรับ XGBoost:
+    - Binning + Label Encoding (ไม่ใช้ OneHot)
+    - Output เป็น numeric features ทั้งหมด
+    - SHAP plots จะอ่านง่ายกว่า
+    
+    Returns:
+        Pipeline: sklearn pipeline object for XGBoost
+    """
+    logger.debug("Entering build_preprocess_pipeline_xgb()")
+    logger.info("Building preprocessing pipeline for XGBoost...")
+    
+    # XGBoost ใช้แค่ FixedBinnerForXGBoost (ไม่ต้อง OneHot)
+    preprocessor = Pipeline(
+        steps=[
+            ("binner", FixedBinnerForXGBoost()),
+        ]
+    )
+
+    logger.info("XGBoost Pipeline created successfully")
     logger.debug(f"Pipeline steps: {[step[0] for step in preprocessor.steps]}")
     
     return preprocessor
@@ -178,10 +204,11 @@ def get_prepared_data():
     ฟังก์ชันหลักสำหรับใช้ในไฟล์ train model:
     - return X_train, X_val, X_test (ยังไม่ transform)
     - y_train, y_val, y_test
-    - preprocessor object (ยังไม่ fit)
+    - preprocessor_lr: สำหรับ Logistic Regression (with OneHot)
+    - preprocessor_xgb: สำหรับ XGBoost (with Label Encoding)
     
     Returns:
-        tuple: (X_train, X_val, X_test, y_train, y_val, y_test, preprocessor)
+        tuple: (X_train, X_val, X_test, y_train, y_val, y_test, preprocessor_lr, preprocessor_xgb)
     """
     logger.info("="*60)
     logger.info("Starting data preparation pipeline")
@@ -189,12 +216,16 @@ def get_prepared_data():
     
     df = load_raw_data()
     X_train, X_val, X_test, y_train, y_val, y_test = train_val_test_split(df)
-    preprocessor = build_preprocess_pipeline()
+    
+    # สร้าง preprocessor ทั้ง 2 แบบ
+    preprocessor_lr = build_preprocess_pipeline_lr()
+    preprocessor_xgb = build_preprocess_pipeline_xgb()
     
     logger.info("Data preparation complete!")
+    logger.info("Created 2 preprocessors: LR (OneHot) and XGBoost (Label Encoding)")
     logger.info("="*60)
     
-    return X_train, X_val, X_test, y_train, y_val, y_test, preprocessor
+    return X_train, X_val, X_test, y_train, y_val, y_test, preprocessor_lr, preprocessor_xgb
 
 
 def _print_basic_stats(y_train, y_val, y_test):
@@ -214,11 +245,17 @@ def _print_basic_stats(y_train, y_val, y_test):
     print(f"Test:  {class_ratio(y_test)}")
 
 
+
 if __name__ == "__main__":  
     df_raw = load_raw_data()
     print(f"Raw data shape: {df_raw.shape}")
     print(df_raw.head(3))
     print()
 
-    X_train, X_val, X_test, y_train, y_val, y_test, _ = get_prepared_data()
+    X_train, X_val, X_test, y_train, y_val, y_test, preprocessor_lr, preprocessor_xgb = get_prepared_data()
     _print_basic_stats(y_train, y_val, y_test)
+    
+    print("\n=== Preprocessors Created ===")
+    print(f"LR Preprocessor: {preprocessor_lr}")
+    print(f"XGBoost Preprocessor: {preprocessor_xgb}")
+

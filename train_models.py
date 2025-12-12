@@ -179,8 +179,8 @@ def train_xgboost(X_train, y_train, X_val, y_val, X_test, y_test):
     return xgb_model, cv_scores, val_metrics, test_metrics
 
 
-def save_models(lr_model, xgb_model, preprocessor, models_dir):
-    """Save trained models"""
+def save_models(lr_model, xgb_model, preprocessor_lr, preprocessor_xgb, models_dir):
+    """Save trained models and their respective preprocessors"""
     # Save Logistic Regression
     lr_path = models_dir / "logistic_regression.pkl"
     with open(lr_path, 'wb') as f:
@@ -193,11 +193,17 @@ def save_models(lr_model, xgb_model, preprocessor, models_dir):
         pickle.dump(xgb_model, f)
     logger.info(f"Saved XGBoost to {xgb_path}")
     
-    # Save Preprocessor
-    prep_path = models_dir / "preprocessor.pkl"
-    with open(prep_path, 'wb') as f:
-        pickle.dump(preprocessor, f)
-    logger.info(f"Saved Preprocessor to {prep_path}")
+    # Save LR Preprocessor (with OneHot)
+    prep_lr_path = models_dir / "preprocessor_lr.pkl"
+    with open(prep_lr_path, 'wb') as f:
+        pickle.dump(preprocessor_lr, f)
+    logger.info(f"Saved LR Preprocessor to {prep_lr_path}")
+    
+    # Save XGBoost Preprocessor (with Label Encoding)
+    prep_xgb_path = models_dir / "preprocessor_xgb.pkl"
+    with open(prep_xgb_path, 'wb') as f:
+        pickle.dump(preprocessor_xgb, f)
+    logger.info(f"Saved XGBoost Preprocessor to {prep_xgb_path}")
     
     # Save run info
     info_path = models_dir / "run_info.txt"
@@ -210,6 +216,9 @@ def save_models(lr_model, xgb_model, preprocessor, models_dir):
         f.write(f"  XGB n_estimators: {XGB_N_ESTIMATORS}\n")
         f.write(f"  XGB max_depth: {XGB_MAX_DEPTH}\n")
         f.write(f"  XGB learning_rate: {XGB_LEARNING_RATE}\n")
+        f.write(f"\nPreprocessing:\n")
+        f.write(f"  LR: FixedBinnerForLR + OneHotEncoder\n")
+        f.write(f"  XGBoost: FixedBinnerForXGBoost (Label Encoding)\n")
     logger.info(f"Saved run info to {info_path}")
 
 
@@ -238,39 +247,62 @@ if __name__ == "__main__":
     
     # โหลดและเตรียมข้อมูล
     logger.info("Loading and preparing data...")
-    X_train, X_val, X_test, y_train, y_val, y_test, preprocessor = get_prepared_data()
+    X_train, X_val, X_test, y_train, y_val, y_test, preprocessor_lr, preprocessor_xgb = get_prepared_data()
     
-    # Fit preprocessor และ transform
-    logger.info("Fitting preprocessor...")
-    preprocessor.fit(X_train, y_train)
+    # ===== Logistic Regression Pipeline =====
+    logger.info("="*70)
+    logger.info("LOGISTIC REGRESSION PIPELINE (with OneHot Encoding)")
+    logger.info("="*70)
     
-    logger.info("Transforming datasets...")
-    X_train_transformed = preprocessor.transform(X_train)
-    X_val_transformed = preprocessor.transform(X_val)
-    X_test_transformed = preprocessor.transform(X_test)
+    # Fit preprocessor และ transform สำหรับ LR
+    logger.info("Fitting LR preprocessor...")
+    preprocessor_lr.fit(X_train, y_train)
     
-    logger.info(f"Transformed shapes - Train: {X_train_transformed.shape}, Val: {X_val_transformed.shape}, Test: {X_test_transformed.shape}")
+    logger.info("Transforming datasets for LR...")
+    X_train_lr = preprocessor_lr.transform(X_train)
+    X_val_lr = preprocessor_lr.transform(X_val)
+    X_test_lr = preprocessor_lr.transform(X_test)
+    
+    logger.info(f"LR Transformed shapes - Train: {X_train_lr.shape}, Val: {X_val_lr.shape}, Test: {X_test_lr.shape}")
     
     # Train Logistic Regression
     lr_model, lr_cv, lr_val_metrics, lr_test_metrics = train_logistic_regression(
-        X_train_transformed, y_train,
-        X_val_transformed, y_val,
-        X_test_transformed, y_test
+        X_train_lr, y_train,
+        X_val_lr, y_val,
+        X_test_lr, y_test
     )
+    
+    # ===== XGBoost Pipeline =====
+    logger.info("="*70)
+    logger.info("XGBOOST PIPELINE (with Label Encoding)")
+    logger.info("="*70)
+    
+    # Fit preprocessor และ transform สำหรับ XGBoost
+    logger.info("Fitting XGBoost preprocessor...")
+    preprocessor_xgb.fit(X_train, y_train)
+    
+    logger.info("Transforming datasets for XGBoost...")
+    X_train_xgb = preprocessor_xgb.transform(X_train)
+    X_val_xgb = preprocessor_xgb.transform(X_val)
+    X_test_xgb = preprocessor_xgb.transform(X_test)
+    
+    logger.info(f"XGBoost Transformed shapes - Train: {X_train_xgb.shape}, Val: {X_val_xgb.shape}, Test: {X_test_xgb.shape}")
     
     # Train XGBoost
     xgb_model, xgb_cv, xgb_val_metrics, xgb_test_metrics = train_xgboost(
-        X_train_transformed, y_train,
-        X_val_transformed, y_val,
-        X_test_transformed, y_test
+        X_train_xgb, y_train,
+        X_val_xgb, y_val,
+        X_test_xgb, y_test
     )
     
     # Save models
-    save_models(lr_model, xgb_model, preprocessor, models_dir)
+    save_models(lr_model, xgb_model, preprocessor_lr, preprocessor_xgb, models_dir)
     
     # Print comparison
     print_comparison(lr_test_metrics, xgb_test_metrics)
     
     logger.info("="*70)
     logger.info("TRAINING COMPLETE!")
+    logger.info(f"Models saved to: {models_dir}")
     logger.info("="*70)
+
