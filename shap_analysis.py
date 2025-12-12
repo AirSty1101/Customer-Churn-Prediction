@@ -34,10 +34,11 @@ def load_model():
     with open(models_dir / "xgboost.pkl", 'rb') as f:
         xgb_model = pickle.load(f)
     
-    with open(models_dir / "preprocessor.pkl", 'rb') as f:
+    # โหลด XGBoost preprocessor (Label Encoding)
+    with open(models_dir / "preprocessor_xgb.pkl", 'rb') as f:
         preprocessor = pickle.load(f)
     
-    logger.info("Models loaded successfully")
+    logger.info("XGBoost model and preprocessor loaded successfully")
     return xgb_model, preprocessor
 
 
@@ -144,21 +145,29 @@ if __name__ == "__main__":
     # โหลดข้อมูล test
     from data_prep import get_prepared_data
     logger.info("Loading test data...")
-    X_train, X_val, X_test, y_train, y_val, y_test, _ = get_prepared_data()
+    X_train, X_val, X_test, y_train, y_val, y_test, _, _ = get_prepared_data()
     
     # Transform
     X_test_transformed = preprocessor.transform(X_test)
     
-    # แปลง sparse matrix เป็น dense array (SHAP ต้องการ)
+    # แปลงเป็น numpy array (SHAP ต้องการ)
     if hasattr(X_test_transformed, 'toarray'):
+        # Sparse matrix
         X_test_dense = X_test_transformed.toarray()
+    elif hasattr(X_test_transformed, 'values'):
+        # DataFrame
+        X_test_dense = X_test_transformed.values
     else:
-        X_test_dense = X_test_transformed
+        # Already numpy array
+        X_test_dense = np.array(X_test_transformed)
     
     logger.info(f"Test data shape: {X_test_dense.shape}")
+    logger.info(f"Test data type: {type(X_test_dense)}")
     
-    # ดึง feature names
-    feature_names = preprocessor.named_steps['encoder'].get_feature_names_out()
+    # ดึง feature names (XGBoost preprocessor ไม่มี encoder, ใช้ชื่อจาก binner)
+    # สำหรับ XGBoost features คือ: CreditScore, Age, Tenure, Balance, Geography, Gender, + binned features
+    feature_names = ['CreditScore', 'Age', 'Tenure', 'Balance', 'Geography', 'Gender', 
+                     'NumOfProducts', 'HasCrCard', 'IsActiveMember', 'EstimatedSalary']
     logger.info(f"Number of features: {len(feature_names)}")
     
     # สร้าง SHAP explainer
