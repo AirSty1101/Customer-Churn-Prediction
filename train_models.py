@@ -16,11 +16,13 @@ from sklearn.metrics import (
 import xgboost as xgb
 
 from data_prep import get_prepared_data
+from imbalance_handlers import get_resampler
 from logger_config import setup_logger
 from config import (
     MODELS_DIR, PLOTS_DIR, RUN_NUMBER, CV_FOLDS, RANDOM_STATE,
     LR_MAX_ITER, LR_SOLVER,
-    XGB_N_ESTIMATORS, XGB_MAX_DEPTH, XGB_LEARNING_RATE, XGB_RANDOM_STATE
+    XGB_N_ESTIMATORS, XGB_MAX_DEPTH, XGB_LEARNING_RATE, XGB_RANDOM_STATE,
+    RESAMPLING_METHOD
 )
 
 logger = setup_logger("train_models")
@@ -219,6 +221,8 @@ def save_models(lr_model, xgb_model, preprocessor_lr, preprocessor_xgb, models_d
         f.write(f"\nPreprocessing:\n")
         f.write(f"  LR: FixedBinnerForLR + OneHotEncoder\n")
         f.write(f"  XGBoost: FixedBinnerForXGBoost (Label Encoding)\n")
+        f.write(f"\nImbalanced Data Handling:\n")
+        f.write(f"  Resampling Method: {RESAMPLING_METHOD}\n")
     logger.info(f"Saved run info to {info_path}")
 
 
@@ -265,9 +269,13 @@ if __name__ == "__main__":
     
     logger.info(f"LR Transformed shapes - Train: {X_train_lr.shape}, Val: {X_val_lr.shape}, Test: {X_test_lr.shape}")
     
+    # Apply resampling if specified (เฉพาะ training set!)
+    resampler = get_resampler(RESAMPLING_METHOD, random_state=RANDOM_STATE)
+    X_train_lr_resampled, y_train_lr_resampled = resampler(X_train_lr, y_train)
+    
     # Train Logistic Regression
     lr_model, lr_cv, lr_val_metrics, lr_test_metrics = train_logistic_regression(
-        X_train_lr, y_train,
+        X_train_lr_resampled, y_train_lr_resampled,
         X_val_lr, y_val,
         X_test_lr, y_test
     )
@@ -288,9 +296,13 @@ if __name__ == "__main__":
     
     logger.info(f"XGBoost Transformed shapes - Train: {X_train_xgb.shape}, Val: {X_val_xgb.shape}, Test: {X_test_xgb.shape}")
     
+    # Apply resampling if specified (เฉพาะ training set!)
+    # ใช้ resampler เดียวกันกับ LR
+    X_train_xgb_resampled, y_train_xgb_resampled = resampler(X_train_xgb, y_train)
+    
     # Train XGBoost
     xgb_model, xgb_cv, xgb_val_metrics, xgb_test_metrics = train_xgboost(
-        X_train_xgb, y_train,
+        X_train_xgb_resampled, y_train_xgb_resampled,
         X_val_xgb, y_val,
         X_test_xgb, y_test
     )

@@ -34,7 +34,7 @@ MODELS_DIR = "models"  # โฟลเดอร์เก็บ trained models
 PLOTS_DIR = "plots"    # โฟลเดอร์เก็บ visualizations
 
 # Run Number (เปลี่ยนทุกครั้งที่รัน experiment ใหม่)
-RUN_NUMBER = 1
+RUN_NUMBER = 2
 
 # Cross-Validation
 CV_FOLDS = 5
@@ -48,3 +48,10 @@ XGB_N_ESTIMATORS = 100
 XGB_MAX_DEPTH = 6
 XGB_LEARNING_RATE = 0.1
 XGB_RANDOM_STATE = 42
+
+# === Imbalanced Data Handling ===
+# Options: 'none', 'smote', 'adasyn', 'smote_tomek', 'smote_enn'
+RESAMPLING_METHOD = 'none'  # Run #2: 'none' (class weights only)
+                             # Run #3: 'smote'
+                             # Run #4: 'adasyn'
+                             # Run #5: 'smote_tomek'
