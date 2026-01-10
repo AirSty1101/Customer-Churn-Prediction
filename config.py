@@ -34,8 +34,24 @@ MODELS_DIR = "models"  # โฟลเดอร์เก็บ trained models
 PLOTS_DIR = "plots"    # โฟลเดอร์เก็บ visualizations
 
 # Run Number (เปลี่ยนทุกครั้งที่รัน experiment ใหม่)
-RUN_NUMBER = 2
+RUN_NUMBER = 6 
 
+# === Imbalanced Data Handling ===
+# Options: 'none', 'smote', 'adasyn', 'smote_tomek', 'smote_enn'
+RESAMPLING_METHOD = 'none'  # Run #2: 'none' (class weights only)
+                             # Run #3: 'smote'
+                             # Run #4: 'adasyn'
+                             # Run #5: 'smote_tomek'
+                             # Run #6: 'none' (cost-sensitive learning)
+
+# === Cost-Sensitive Learning ===
+# ใช้ sample_weight แทน resampling
+# False Negative (พลาด Churn) มี cost สูงกว่า False Positive
+USE_COST_SENSITIVE = True  # Run #6: True (ทดสอบ cost-sensitive)
+COST_RATIO = 10.0  # น้ำหนักของ minority class (Churn) เทียบกับ majority class
+                   # ค่าที่แนะนำ: 5.0, 10.0, 15.0, 20.0
+                   # ยิ่งสูง = ยิ่ง focus ที่ Recall (ลด False Negative)
+                             
 # Cross-Validation
 CV_FOLDS = 5
 
@@ -49,9 +65,4 @@ XGB_MAX_DEPTH = 6
 XGB_LEARNING_RATE = 0.1
 XGB_RANDOM_STATE = 42
 
-# === Imbalanced Data Handling ===
-# Options: 'none', 'smote', 'adasyn', 'smote_tomek', 'smote_enn'
-RESAMPLING_METHOD = 'none'  # Run #2: 'none' (class weights only)
-                             # Run #3: 'smote'
-                             # Run #4: 'adasyn'
-                             # Run #5: 'smote_tomek'
+
