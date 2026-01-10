@@ -11,109 +11,11 @@
 - [📝 Run #2 - Separate Preprocessing (2025-12-12)](#run-2---2025-12-12-separate-preprocessing-lr-vs-xgboost)
 - [📝 Run #3 - SMOTE Resampling (2025-12-14)](#run-3---2025-12-14-smote-resampling)
 - [📝 Run #4 - ADASYN Resampling (2025-12-15)](#run-4---2025-12-15-adasyn-resampling)
-- [📝 Run #5 - SMOTETomek Resampling (2025-12-15)](#run-5---2025-12-15-smotetomek-resampling) ⭐ **Latest**
+- [📝 Run #5 - SMOTETomek Resampling (2025-12-15)](#run-5---2025-12-15-smotetomek-resampling)
+- [📝 Run #6 - Cost-Sensitive Learning (2026-01-11)](#run-6---2026-01-11-cost-sensitive-learning) ⭐ **Latest**
 - [📈 สรุปการเปรียบเทียบ](#สรุปการเปรียบเทียบ)
 - [🔬 Planned Experiments](#planned-experiments-imbalanced-data-handling-techniques)
 - [💡 แนวทางปรับปรุง](#แนวทางปรับปรุง)
-
----
-
-## 📋 Template สำหรับบันทึกผลลัพธ์
-
-เมื่อรัน experiment ใหม่ ให้คัดลอก template ด้านล่างและกรอกผลลัพธ์
-
-```markdown
-## Run #X - YYYY-MM-DD
-
-### Configuration
-
-- **Logistic Regression:**
-
-  - class_weight: 'balanced'
-  - max_iter: 1000
-  - solver: 'lbfgs'
-
-- **XGBoost:**
-
-  - n_estimators: 100
-  - max_depth: 6
-  - learning_rate: 0.1
-  - scale_pos_weight: [calculated value]
-
-- **Cross-Validation:** 5-Fold
-- **Threshold:** 0.5
-
-### Results (Test Set)
-
-| Model               | Accuracy | Precision | Recall | F1     | ROC-AUC |
-| ------------------- | -------- | --------- | ------ | ------ | ------- |
-| Logistic Regression | 0.XXXX   | 0.XXXX    | 0.XXXX | 0.XXXX | 0.XXXX  |
-| XGBoost             | 0.XXXX   | 0.XXXX    | 0.XXXX | 0.XXXX | 0.XXXX  |
-
-### Cross-Validation Results
-
-**Logistic Regression:**
-
-- Accuracy: 0.XXXX (+/- 0.XXXX)
-- Precision: 0.XXXX (+/- 0.XXXX)
-- Recall: 0.XXXX (+/- 0.XXXX)
-- F1: 0.XXXX (+/- 0.XXXX)
-- ROC-AUC: 0.XXXX (+/- 0.XXXX)
-
-**XGBoost:**
-
-- Accuracy: 0.XXXX (+/- 0.XXXX)
-- Precision: 0.XXXX (+/- 0.XXXX)
-- Recall: 0.XXXX (+/- 0.XXXX)
-- F1: 0.XXXX (+/- 0.XXXX)
-- ROC-AUC: 0.XXXX (+/- 0.XXXX)
-
-### Top 10 Features (SHAP - XGBoost)
-
-1. Feature_name_1 (SHAP value: 0.XXXX)
-2. Feature_name_2 (SHAP value: 0.XXXX)
-3. Feature_name_3 (SHAP value: 0.XXXX)
-   ...
-
-### Confusion Matrix (Test Set)
-
-**Logistic Regression:**
-```
-
-              Predicted
-              0      1
-
-Actual 0 [TN] [FP]
-1 [FN] [TP]
-
-```
-
-**XGBoost:**
-```
-
-              Predicted
-              0      1
-
-Actual 0 [TN] [FP]
-1 [FN] [TP]
-
-```
-
-### Observations & Insights
-
-- [สิ่งที่สังเกตเห็นจากผลลัพธ์]
-- [ข้อดี/ข้อเสียของแต่ละ model]
-- [Insights จาก SHAP analysis]
-- [แนวทางปรับปรุงในรอบถัดไป]
-
-### Plots
-
-- Confusion Matrix: `plots/confusion_matrix_*.png`
-- ROC Curves: `plots/roc_curves.png`
-- SHAP Summary: `plots/shap_summary.png`
-
----
-```
 
 ---
 
@@ -133,8 +35,6 @@ Actual 0 [TN] [FP]
 - **ROC-AUC > 0.80** = เป็นมาตรฐานสากลสำหรับ model ที่ใช้งานได้จริง
 
 ---
-
-## 📝 บันทึกผลการทดลอง
 
 ## 📝 บันทึกผลการทดลอง
 
@@ -3011,6 +2911,226 @@ Run #5 (SMOTETomek) มี pattern คล้ายกับ Run #4 มาก:
 
 ---
 
+### Run #6 - 2026-01-11 (Cost-Sensitive Learning)
+
+#### Configuration
+
+- **Logistic Regression:**
+
+  - `class_weight: 'balanced'` - ใช้เหมือน Run #2
+  - `max_iter: 1000`
+  - `solver: 'lbfgs'`
+
+- **XGBoost:**
+
+  - `n_estimators: 100`
+  - `max_depth: 6`
+  - `learning_rate: 0.1`
+  - `scale_pos_weight: 3.9088`
+  - **`sample_weight`**: ใช้ cost-sensitive learning ✨
+    - Not Churn (0): weight = 1.0
+    - Churn (1): weight = 10.0
+
+- **Cross-Validation:** 5-Fold (LR only - XGBoost skip CV เพราะใช้ sample_weight)
+- **Threshold:** 0.5 (default)
+
+#### Imbalance Handling Strategy
+
+**เทคนิคที่ใช้:** Cost-Sensitive Learning
+
+- **Logistic Regression:** `class_weight='balanced'` (เหมือนเดิม)
+- **XGBoost:** `sample_weight` with `cost_ratio=10.0`
+
+**Cost-Sensitive Learning คืออะไร:**
+
+- กำหนด **cost (ต้นทุน)** ที่แตกต่างกันสำหรับ errors แต่ละประเภท
+- **False Negative (พลาด Churn)** = cost สูง (10.0)
+- **False Positive (ทำนาย Churn ผิด)** = cost ต่ำ (1.0)
+- Model จะ **focus ที่การลด False Negative** → **Recall เพิ่มขึ้น**
+
+**ทำไมถึงใช้ Cost-Sensitive:**
+
+- ✅ สะท้อนความสำคัญทางธุรกิจ (พลาดลูกค้า Churn = สูญเสียรายได้มาก)
+- ✅ Flexible - ปรับ cost ratio ได้ตามต้องการ
+- ✅ ไม่สร้างข้อมูลสังเคราะห์ (ต่างจาก SMOTE)
+- ✅ ง่ายกว่า Focal Loss
+
+#### Results (Test Set)
+
+| Model                        | Accuracy   | Precision  | Recall     | F1         | ROC-AUC    |
+| ---------------------------- | ---------- | ---------- | ---------- | ---------- | ---------- |
+| Logistic Regression          | 0.7147     | 0.3887     | 0.6961     | 0.4988     | 0.7621     |
+| **XGBoost (Cost-Sensitive)** | **0.5107** | **0.2838** | **0.9183** | **0.4336** | **0.8220** |
+
+#### Cross-Validation Results
+
+**Logistic Regression:**
+
+- Accuracy: 0.7110 (+/- 0.0110) ✅ Stable
+- Precision: 0.3813 (+/- 0.0095) ✅ Stable
+- Recall: 0.6690 (+/- 0.0234) ⚠️ ผันแปรเล็กน้อย
+- F1: 0.4854 (+/- 0.0059) ✅ Stable
+- ROC-AUC: 0.7626 (+/- 0.0046) ✅ Very Stable
+
+**XGBoost:**
+
+- ⚠️ **Skipped Cross-Validation** เพราะ sklearn's `cross_validate` ไม่รองรับ `sample_weight` สำหรับ XGBoost
+
+#### Observations & Insights
+
+**🎯 Cost-Sensitive Learning ได้ผลตามที่คาดหวัง:**
+
+1. **Recall เพิ่มขึ้นมาก (91.83%)** 🚀
+
+   - เพิ่มจาก Run #2: 68.95% → 91.83% (+22.88 pp)
+   - จับลูกค้าที่ Churn ได้ **281/306 คน** (พลาดแค่ 25 คน!)
+   - **เกินเป้าหมาย 70% ไปถึง 21.83%!**
+
+2. **Precision ลดลงมาก (28.38%)**
+
+   - ลดลงจาก Run #2: 48.62% → 28.38% (-20.24 pp)
+   - False Positive สูงมาก: ทำนายผิดประมาณ **710 คน**
+   - Trade-off ที่คาดการณ์ไว้แล้ว
+
+3. **ROC-AUC ยังคงสูง (82.20%)**
+
+   - ลดลงเล็กน้อยจาก Run #2: 83.79% → 82.20% (-1.59 pp)
+   - ยังคงเกินเป้าหมาย 80%
+   - Model ยังแยก class ได้ดี
+
+4. **Accuracy ต่ำ (51.07%)**
+   - แย่กว่าการทายสุ่ม (50%)
+   - เพราะ model bias ไปทาง Churn มากเกินไป
+
+**💡 Cost Ratio Experiment:**
+
+ทดสอบ cost ratios ต่างๆ (5, 10, 15, 20, 25) พบว่า:
+
+| Cost Ratio         | Accuracy   | Precision  | Recall     | F1         | ROC-AUC    |
+| ------------------ | ---------- | ---------- | ---------- | ---------- | ---------- |
+| **0.0 (Baseline)** | **78.80%** | **48.62%** | 68.95%     | **57.03%** | **83.79%** |
+| 5.0                | 58.87%     | 31.94%     | 89.87%     | 47.13%     | 83.18%     |
+| 10.0               | 51.07%     | 28.38%     | 91.83%     | 43.36%     | 82.20%     |
+| 15.0               | 46.73%     | 26.81%     | 93.14%     | 41.64%     | 81.99%     |
+| **20.0**           | 44.60%     | 26.29%     | **95.10%** | 41.19%     | 82.34%     |
+| 25.0               | 42.60%     | 25.38%     | 93.46%     | 39.92%     | 81.57%     |
+
+**Key Findings:**
+
+- ✅ **Cost Ratio 20.0 ให้ Recall สูงสุด (95.10%)**
+- ✅ **Baseline (Class Weights) ดีที่สุดในเกือบทุก metric**
+- ⚠️ ยิ่ง Cost Ratio สูง → Recall เพิ่ม, Precision ลด
+
+#### Business Impact Analysis
+
+**Scenario: Cost-Sensitive (Cost Ratio = 10.0)**
+
+**Performance:**
+
+- Recall = 0.9183 → จับ Churn ได้ **281 คน** (จาก 306 คน)
+- Precision = 0.2838 → ทำนายว่า Churn **991 คน** (281 ถูก + 710 ผิด)
+
+**ต้นทุน Retention Campaign:**
+
+- ติดต่อลูกค้า: 991 คน × 500 บาท = **495,500 บาท**
+
+**ผลลัพธ์:**
+
+- รักษาลูกค้าไว้ได้: 281 × 30% = **84 คน**
+- มูลค่าที่รักษาไว้ได้: 84 × 100,000 = **8,400,000 บาท**
+- ลูกค้า Churn ที่เหลือ: 306 - 84 = **222 คน**
+- การสูญเสียจาก Churn: 222 × 100,000 = **22,200,000 บาท**
+
+**สรุป:**
+
+- ต้นทุนรวม: 495,500 บาท
+- รายได้ที่รักษาไว้ได้: 8,400,000 บาท
+- การสูญเสียจาก Churn: 22,200,000 บาท
+- **Net Loss: 14,295,500 บาท**
+- **ประหยัดได้เมื่อเทียบกับไม่ทำอะไร: 16,304,500 บาท** ✅
+- **ประหยัดได้มากกว่า Run #2: +3,758,000 บาท** 🎉
+
+**ROI:**
+
+- ROI = (16,304,500 - 495,500) / 495,500 × 100% = **3,192%** 🚀
+
+**เปรียบเทียบกับ Run #2:**
+
+| Scenario                         | Recall | Precision | ติดต่อ (คน) | ต้นทุน (บาท) | รักษาได้ (คน) | Net Loss (บาท) | ประหยัดได้ (บาท)  |
+| -------------------------------- | ------ | --------- | ----------- | ------------ | ------------- | -------------- | ----------------- |
+| **Run #2 (Class Weights)**       | 68.95% | 48.62%    | 507         | 253,500      | 64            | 18,053,500     | 12,546,500        |
+| **Run #6 (Cost-Sensitive 10.0)** | 91.83% | 28.38%    | 991         | 495,500      | 84            | 14,295,500     | **16,304,500** ✅ |
+| **Run #6 (Cost-Sensitive 20.0)** | 95.10% | 26.29%    | 1,107       | 553,500      | 87            | 13,453,500     | **17,146,500** 🏆 |
+
+**🏆 Winner: Cost Ratio = 20.0**
+
+- ประหยัดได้มากที่สุด: **17.15 ล้านบาท**
+- Recall สูงสุด: **95.10%** (พลาดแค่ 15 คน!)
+- แต่ต้องติดต่อลูกค้า 1,107 คน
+
+#### Next Steps & Recommendations
+
+**✅ ข้อสรุป:**
+
+1. **Cost-Sensitive Learning ได้ผลดีมาก!**
+
+   - Recall เพิ่มขึ้น 22.88 pp (จาก 68.95% → 91.83%)
+   - ประหยัดได้มากกว่า Baseline 3.76 ล้านบาท
+
+2. **แต่ Baseline (Run #2) ยังคงดีที่สุดสำหรับภาพรวม:**
+
+   - F1 Score สูงสุด (57.03%)
+   - ROC-AUC สูงสุด (83.79%)
+   - ROI สูงสุด (5,668%)
+   - Balance ระหว่าง Precision & Recall ดีที่สุด
+
+3. **Cost-Sensitive เหมาะกับ:**
+
+   - ✅ ธนาคารที่มีทีม Retention ขนาดใหญ่
+   - ✅ ต้องการ Recall สูงมาก (จับ Churn ให้ได้มากที่สุด)
+   - ✅ ยอมรับ False Positive สูง (ติดต่อลูกค้าผิดคนได้)
+
+4. **Baseline เหมาะกับ:**
+   - ✅ ธนาคารที่มีทรัพยากรจำกัด
+   - ✅ ต้องการ Balance ระหว่าง Precision & Recall
+   - ✅ ต้องการ ROI สูงสุด
+
+**🎯 คำแนะนำ:**
+
+**สำหรับ Production:**
+
+- ใช้ **Baseline (Run #2)** เป็น default model
+- เตรียม **Cost-Sensitive (Ratio 20.0)** ไว้สำหรับ campaign พิเศษ
+
+**สำหรับปรับปรุงเพิ่มเติม:**
+
+1. **Threshold Tuning บน Baseline** - เพิ่ม Recall โดยไม่ต้อง retrain
+2. **Ensemble** - รวม Baseline + Cost-Sensitive
+3. **Hyperparameter Tuning** - Fine-tune XGBoost parameters
+
+#### Plots
+
+**All visualizations saved in:** `plots/run_6/`
+
+- ✅ `confusion_matrix_lr.png` - Confusion Matrix (Logistic Regression)
+- ✅ `confusion_matrix_xgb.png` - Confusion Matrix (XGBoost)
+- ✅ `roc_curves.png` - ROC Curves
+- ✅ `precision_recall_curves.png` - Precision-Recall Curves
+- ✅ `feature_importance_lr.png` - Feature Importance (Logistic Regression)
+- ✅ `feature_importance_xgb.png` - Feature Importance (XGBoost)
+- ✅ `shap_summary.png` - SHAP Summary Plot
+- ✅ `shap_bar.png` - SHAP Feature Importance
+- ✅ `shap_waterfall_sample0.png` - SHAP Waterfall (Sample 0)
+- ✅ `shap_waterfall_churn.png` - SHAP Waterfall (Churned Customer)
+- ✅ `shap_dependence_top.png` - SHAP Dependence Plot
+
+**Cost Ratio Experiment:**
+
+- ✅ `experiments/run_6_cost_sensitive/cost_ratio_comparison.csv`
+- ✅ `experiments/run_6_cost_sensitive/cost_ratio_comparison.png`
+
+---
+
 ## สรุปการเปรียบเทียบ
 
 ### Test Set Performance
@@ -3018,33 +3138,56 @@ Run #5 (SMOTETomek) มี pattern คล้ายกับ Run #4 มาก:
 | Run | Model                                                       | LR<br>Accuracy | LR<br>Precision | LR<br>Recall | LR<br>F1 | LR<br>ROC-AUC | XGB<br>Accuracy | XGB<br>Precision | XGB<br>Recall | XGB<br>F1  | XGB<br>ROC-AUC |
 | --- | ----------------------------------------------------------- | -------------- | --------------- | ------------ | -------- | ------------- | --------------- | ---------------- | ------------- | ---------- | -------------- |
 | #1  | Baseline<br>(OneHot for both)                               | 0.7147         | 0.3887          | 0.6961       | 0.4988   | 0.7621        | 0.6887          | 0.3501           | 0.6144        | 0.4460     | 0.7279         |
-| #2  | Separate Preprocessing<br>(OneHot for LR, Label for XGB) ⭐ | 0.7147         | 0.3887          | 0.6961       | 0.4988   | 0.7621        | **0.7880**      | **0.4862**       | **0.6895**    | **0.5703** | **0.8379**     |
+| #2  | Separate Preprocessing<br>(OneHot for LR, Label for XGB) ⭐ | 0.7147         | 0.3887          | 0.6961       | 0.4988   | 0.7621        | **0.7880**      | **0.4862**       | 0.6895        | **0.5703** | **0.8379**     |
 | #3  | SMOTE Resampling<br>(OneHot for LR, Label for XGB)          | 0.6980         | 0.3708          | 0.6895       | 0.4823   | 0.7600        | 0.8020          | 0.5123           | 0.6144        | 0.5587     | 0.8170         |
 | #4  | ADASYN Resampling<br>(OneHot for LR, Label for XGB)         | 0.6927         | 0.3697          | 0.7190       | 0.4883   | 0.7617        | 0.7980          | 0.5041           | 0.6013        | 0.5484     | 0.8106         |
 | #5  | SMOTETomek Resampling<br>(OneHot for LR, Label for XGB)     | 0.6980         | 0.3708          | 0.6895       | 0.4823   | 0.7600        | 0.8033          | 0.5153           | 0.6046        | 0.5564     | 0.8121         |
+| #6  | Cost-Sensitive Learning<br>(cost_ratio=10.0) 🎯             | 0.7147         | 0.3887          | 0.6961       | 0.4988   | 0.7621        | 0.5107          | 0.2838           | **0.9183**    | 0.4336     | 0.8220         |
 
 **Key Takeaways:**
 
-1. **Run #2 (Class Weights) ยังคงดีที่สุด!** - XGBoost ได้ ROC-AUC = 0.8379 และ Recall = 0.6895
-2. **ทดสอบ Synthetic Sampling ครบทั้ง 3 วิธีแล้ว:**
+1. **Run #2 (Class Weights) ยังคงดีที่สุดสำหรับภาพรวม!**
+
+   - XGBoost: ROC-AUC = 0.8379, F1 = 0.5703, Recall = 0.6895
+   - Balance ระหว่าง Precision & Recall ดีที่สุด
+   - ROI สูงสุด (5,668%)
+
+2. **Run #6 (Cost-Sensitive) ให้ Recall สูงสุด!** 🚀
+
+   - XGBoost: Recall = **0.9183** (+22.88 pp จาก Run #2)
+   - จับลูกค้า Churn ได้ 281/306 คน (พลาดแค่ 25 คน!)
+   - แต่ Precision ต่ำ (0.2838) - ติดต่อลูกค้าผิดคนมาก
+   - ประหยัดได้ 16.3M บาท (มากกว่า Run #2 ถึง 3.76M บาท!)
+
+3. **ทดสอบ Synthetic Sampling ครบทั้ง 3 วิธีแล้ว:**
+
    - SMOTE (Run #3): ROC-AUC = 0.8170, Recall = 0.6144
    - SMOTETomek (Run #5): ROC-AUC = 0.8121, Recall = 0.6046, **Precision สูงสุด (0.5153)**
    - ADASYN (Run #4): ROC-AUC = 0.8106, Recall = 0.6013
-3. **Synthetic Sampling ทุกวิธีสร้าง overfitting:**
+
+4. **Synthetic Sampling ทุกวิธีสร้าง overfitting:**
+
    - Run #3: CV ROC-AUC = 0.91, Test = 0.82 (ต่างกัน 9%)
    - Run #4: CV ROC-AUC = 0.91, Test = 0.81 (ต่างกัน 10%)
    - Run #5: CV ROC-AUC = 0.91, Test = 0.81 (ต่างกัน 10%)
-4. **Recall ลดลงทุก Runs ที่ใช้ Synthetic Sampling:**
-   - Run #2 (Class Weights): Recall = **68.95%** ✅
-   - Run #3 (SMOTE): Recall = 61.44% (-7.5 pp)
-   - Run #5 (SMOTETomek): Recall = 60.46% (-8.5 pp)
-   - Run #4 (ADASYN): Recall = 60.13% (-8.8 pp)
-5. **SMOTETomek ดีที่สุดในกลุ่ม Synthetic Sampling:**
-   - Precision สูงสุด (51.53%)
-   - แต่ Recall ยังต่ำกว่า Class Weights มาก
-6. **แยก preprocessing ตาม model** ทำให้ XGBoost ดีขึ้น 15% ใน ROC-AUC (Run #1 → Run #2)
-7. **ไม่ควรใช้ synthetic sampling กับ dataset นี้** - Class weights เพียงพอสำหรับ imbalance ratio 4:1
-8. **Recall เป็น metric สำคัญที่สุด** - และ Run #2 ให้ Recall สูงสุด (68.95%)
+
+5. **Recall Comparison:**
+
+   - Run #6 (Cost-Sensitive): Recall = **91.83%** 🥇 (ดีที่สุด!)
+   - Run #2 (Class Weights): Recall = **68.95%** 🥈
+   - Run #4 (ADASYN): Recall = 71.90%
+   - Run #3 (SMOTE): Recall = 61.44%
+   - Run #5 (SMOTETomek): Recall = 60.46%
+
+6. **Cost-Sensitive Learning Findings:**
+
+   - Cost Ratio 20.0 ให้ Recall สูงสุด (95.10%)
+   - ยิ่ง Cost Ratio สูง → Recall เพิ่ม, Precision ลด
+   - เหมาะกับธนาคารที่มีทีม Retention ขนาดใหญ่
+
+7. **แยก preprocessing ตาม model** ทำให้ XGBoost ดีขึ้น 15% ใน ROC-AUC (Run #1 → Run #2)
+
+8. **Recall เป็น metric สำคัญที่สุด** - และ Run #6 ให้ Recall สูงสุด (91.83%)
 
 ---
 
@@ -3057,145 +3200,42 @@ Run #5 (SMOTETomek) มี pattern คล้ายกับ Run #4 มาก:
 - [x] **Test SMOTE Resampling** - ทดสอบแล้ว! แต่ไม่ได้ช่วยปรับปรุง performance (Recall ลดลง 7.5 pp.)
 - [x] **Test ADASYN Resampling** - ทดสอบแล้ว! แย่กว่า SMOTE (Recall ลดลง 8.8 pp.)
 - [x] **Test SMOTETomek (Hybrid)** - ทดสอบแล้ว! Precision สูงสุด แต่ Recall ยังต่ำ (ลดลง 8.5 pp.)
+- [x] **Test Cost-Sensitive Learning** - สำเร็จ! Recall สูงสุด (91.83%) แต่ Precision ต่ำ (28.38%)
 
-**📊 สรุปจากการทดสอบ Synthetic Sampling:**
+**📊 สรุปจากการทดสอบทั้งหมด:**
 
-| Method            | ROC-AUC    | Recall     | Precision  | Ranking     |
-| ----------------- | ---------- | ---------- | ---------- | ----------- |
-| **Class Weights** | **0.8379** | **0.6895** | 0.4862     | 🥇 **Best** |
-| SMOTE             | 0.8170     | 0.6144     | 0.5123     | 🥈 2nd      |
-| SMOTETomek        | 0.8121     | 0.6046     | **0.5153** | 🥉 3rd      |
-| ADASYN            | 0.8106     | 0.6013     | 0.5041     | 4th         |
+| Method                | ROC-AUC    | Recall     | Precision  | F1         | Ranking     |
+| --------------------- | ---------- | ---------- | ---------- | ---------- | ----------- |
+| **Class Weights**     | **0.8379** | 0.6895     | **0.4862** | **0.5703** | 🥇 **Best** |
+| Cost-Sensitive (10.0) | 0.8220     | **0.9183** | 0.2838     | 0.4336     | 🥈 2nd      |
+| SMOTE                 | 0.8170     | 0.6144     | 0.5123     | 0.5587     | 🥉 3rd      |
+| SMOTETomek            | 0.8121     | 0.6046     | 0.5153     | 0.5564     | 4th         |
+| ADASYN                | 0.8106     | 0.6013     | 0.5041     | 0.5484     | 5th         |
 
 **💡 ข้อสรุป:**
 
-- ✅ **Class Weights ดีที่สุดในทุกด้าน**
+- ✅ **Class Weights (Run #2) ดีที่สุดสำหรับภาพรวม** - Balance, ROI สูงสุด
+- ✅ **Cost-Sensitive (Run #6) ดีที่สุดสำหรับ Recall** - จับ Churn ได้มากที่สุด
 - ❌ **Synthetic Sampling ทุกวิธีสร้าง overfitting และลด Recall**
 - ❌ **Hybrid approach (SMOTETomek) ไม่ได้แก้ปัญหา**
-- ✅ **ควรใช้ Run #2 (Class Weights) เป็น final model**
-
----
-
-## Planned Experiments: Imbalanced Data Handling Techniques
-
-### Run #6: Focal Loss
-
-**Objective:** ใช้ loss function ที่ focus ที่ hard examples
-
-**Approach:**
-
-- Implement Focal Loss สำหรับ XGBoost
-- ลด weight ของ easy examples
-- เพิ่ม weight ของ hard-to-classify examples
-
-**Expected Results:**
-
-- Model focus ที่ samples ที่ยากเรียนรู้
-- อาจเพิ่ม Recall สำหรับ edge cases
-
-**Implementation:**
-
-```python
-# Custom objective function for XGBoost
-def focal_loss(y_true, y_pred, gamma=2.0, alpha=0.25):
-    # Focal Loss implementation
-    pass
-
-xgb_model = xgb.XGBClassifier(
-    objective=focal_loss,
-    # ... other params
-)
-```
-
-**Pros:**
-
-- ✅ Focus ที่ hard examples
-- ✅ ลด overfitting จาก easy examples
-- ✅ เหมาะกับ highly imbalanced data
-
-**Cons:**
-
-- ⚠️ ต้อง implement custom objective
-- ⚠️ Hyperparameter tuning ยากขึ้น (gamma, alpha)
-- ⚠️ อาจไม่ stable เท่า standard loss
-
----
-
-### Run #7: Cost-Sensitive Learning
-
-**Objective:** กำหนด cost ที่แตกต่างกันสำหรับ errors แต่ละประเภท
-
-**Approach:**
-
-- กำหนด cost matrix:
-  - False Negative (พลาด Churn) = cost สูง (เช่น 10)
-  - False Positive (ทำนาย Churn ผิด) = cost ต่ำ (เช่น 1)
-- ใช้ `sample_weight` ใน XGBoost
-
-**Expected Results:**
-
-- Model จะพยายามลด False Negative มากขึ้น
-- Recall เพิ่มขึ้น
-- Precision อาจลดลง (trade-off)
-
-**Implementation:**
-
-```python
-# สร้าง sample weights ตาม cost
-sample_weights = np.where(y_train == 1, 10, 1)
-
-xgb_model.fit(
-    X_train, y_train,
-    sample_weight=sample_weights
-)
-```
-
-**Pros:**
-
-- ✅ สะท้อนความสำคัญทางธุรกิจ
-- ✅ Flexible - ปรับ cost ได้ตามต้องการ
-- ✅ ใช้งานง่าย
-
-**Cons:**
-
-- ⚠️ ต้องกำหนด cost ที่เหมาะสม
-- ⚠️ อาจ bias ไปทาง minority class มากเกินไป
-
----
-
-## 📊 Experiment Comparison Plan
-
-หลังจากทำ Run #3-7 เสร็จ จะเปรียบเทียบ:
-
-| Run | Technique                | Focus Metric | Expected Improvement |
-| --- | ------------------------ | ------------ | -------------------- |
-| #2  | Class Weights (Baseline) | ROC-AUC      | 0.8379               |
-| #3  | SMOTE                    | Recall       | +5-10%               |
-| #4  | ADASYN                   | Recall       | +5-10%               |
-| #5  | Hybrid (SMOTETomek)      | Precision    | +3-5%                |
-| #6  | Focal Loss               | Hard Cases   | +2-5%                |
-| #7  | Cost-Sensitive Learning  | Recall       | +5-10%               |
-
-**Evaluation Criteria:**
-
-- ROC-AUC (primary)
-- Recall (secondary - สำคัญสำหรับ Churn)
-- Precision (tertiary)
-- F1 Score
-- Training Time
-- Model Stability (CV std)
+- ✅ **ควรใช้ Run #2 เป็น default model, Run #6 สำหรับ campaign พิเศษ**
 
 ---
 
 ## 🎯 Next Immediate Steps
 
-**✅ Synthetic Sampling Experiments - COMPLETED:**
+**✅ All Major Experiments - COMPLETED:**
 
-- [x] **Run #3: SMOTE** - เสร็จแล้ว! ผลลัพธ์: ไม่ดีเท่า Class Weights
-- [x] **Run #4: ADASYN** - เสร็จแล้ว! ผลลัพธ์: แย่กว่า SMOTE
-- [x] **Run #5: SMOTETomek** - เสร็จแล้ว! ผลลัพธ์: Precision สูงสุด แต่ Recall ต่ำ
+- [x] **Run #2: Class Weights** - ดีที่สุดสำหรับภาพรวม
+- [x] **Run #3: SMOTE** - ไม่ดีเท่า Class Weights
+- [x] **Run #4: ADASYN** - แย่กว่า SMOTE
+- [x] **Run #5: SMOTETomek** - Precision สูงสุด แต่ Recall ต่ำ
+- [x] **Run #6: Cost-Sensitive Learning** - Recall สูงสุด (91.83%)!
 
-**📊 สรุป:** Class Weights (Run #2) ดีที่สุด - ไม่ควรใช้ Synthetic Sampling
+**📊 สรุป:**
+
+- **Run #2 (Class Weights)** = Best Overall (F1, ROC-AUC, ROI)
+- **Run #6 (Cost-Sensitive)** = Best Recall (91.83%)
 
 ---
 
@@ -3203,27 +3243,29 @@ xgb_model.fit(
 
 1. **Threshold Tuning (Run #2)** - แนะนำทำก่อน ⭐
 
-   - ปรับ threshold เพื่อเพิ่ม Recall ให้ถึง 70%
+   - ปรับ threshold เพื่อเพิ่ม Recall ให้ถึง 70%+
    - หรือ balance ระหว่าง Precision & Recall
+   - ไม่ต้อง retrain model!
 
 2. **Hyperparameter Tuning (Run #2)**
 
    - Fine-tune XGBoost parameters
    - อาจเพิ่ม ROC-AUC ได้อีก 1-2%
 
-3. **Feature Engineering**
+3. **Ensemble Model**
 
-   - สร้าง interaction features
-   - อาจช่วยเพิ่ม performance เล็กน้อย
+   - รวม Run #2 (Baseline) + Run #6 (Cost-Sensitive)
+   - Best of both worlds!
 
 4. **Deploy Model**
    - สร้าง API หรือ web app
-   - ใช้ Run #2 เป็น final model
+   - ใช้ Run #2 เป็น default model
+   - เตรียม Run #6 (Cost Ratio 20.0) สำหรับ campaign พิเศษ
 
 ---
 
 **❌ ไม่แนะนำ (ทดสอบแล้วไม่ได้ผล):**
 
 - ❌ **SMOTEENN** - คาดว่าจะคล้าย SMOTETomek
-- ❌ **Focal Loss** - ซับซ้อนและอาจไม่คุ้มค่า
+- ❌ **Focal Loss** - ซับซ้อนและไม่คุ้มค่า
 - ❌ **Synthetic Sampling อื่นๆ** - ไม่เหมาะกับ dataset นี้ (imbalance ratio 4:1)

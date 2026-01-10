@@ -47,7 +47,7 @@ RESAMPLING_METHOD = 'none'  # Run #2: 'none' (class weights only)
 # === Cost-Sensitive Learning ===
 # ใช้ sample_weight แทน resampling
 # False Negative (พลาด Churn) มี cost สูงกว่า False Positive
-USE_COST_SENSITIVE = True  # Run #6: True (ทดสอบ cost-sensitive)
+USE_COST_SENSITIVE = False  # Run #6: True (ทดสอบ cost-sensitive)
 COST_RATIO = 10.0  # น้ำหนักของ minority class (Churn) เทียบกับ majority class
                    # ค่าที่แนะนำ: 5.0, 10.0, 15.0, 20.0
                    # ยิ่งสูง = ยิ่ง focus ที่ Recall (ลด False Negative)
