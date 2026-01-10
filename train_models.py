@@ -17,12 +17,13 @@ import xgboost as xgb
 
 from data_prep import get_prepared_data
 from imbalance_handlers import get_resampler
+from cost_sensitive import get_sample_weights
 from logger_config import setup_logger
 from config import (
     MODELS_DIR, PLOTS_DIR, RUN_NUMBER, CV_FOLDS, RANDOM_STATE,
     LR_MAX_ITER, LR_SOLVER,
     XGB_N_ESTIMATORS, XGB_MAX_DEPTH, XGB_LEARNING_RATE, XGB_RANDOM_STATE,
-    RESAMPLING_METHOD
+    RESAMPLING_METHOD, USE_COST_SENSITIVE, COST_RATIO
 )
 
 logger = setup_logger("train_models")
@@ -114,10 +115,13 @@ def train_logistic_regression(X_train, y_train, X_val, y_val, X_test, y_test):
     return lr_model, cv_scores, val_metrics, test_metrics
 
 
-def train_xgboost(X_train, y_train, X_val, y_val, X_test, y_test):
+def train_xgboost(X_train, y_train, X_val, y_val, X_test, y_test, sample_weight=None):
     """
     Train XGBoost with scale_pos_weight
     และทำ 5-Fold Cross-Validation
+    
+    Args:
+        sample_weight: Optional sample weights for cost-sensitive learning
     """
     logger.info("="*70)
     logger.info("Training XGBoost")
@@ -128,6 +132,12 @@ def train_xgboost(X_train, y_train, X_val, y_val, X_test, y_test):
     n_positive = (y_train == 1).sum()
     scale_pos_weight = n_negative / n_positive
     logger.info(f"Calculated scale_pos_weight: {scale_pos_weight:.4f}")
+    
+    if sample_weight is not None:
+        logger.info(f"Using sample weights for cost-sensitive learning")
+        logger.info(f"  Sample weight shape: {sample_weight.shape}")
+        logger.info(f"  Unique weights: {np.unique(sample_weight)}")
+        logger.info(f"  Total weight: {sample_weight.sum():.2f}")
     
     # สร้าง model
     xgb_model = xgb.XGBClassifier(
@@ -142,21 +152,32 @@ def train_xgboost(X_train, y_train, X_val, y_val, X_test, y_test):
     
     # Cross-Validation
     logger.info(f"Performing {CV_FOLDS}-Fold Cross-Validation...")
-    cv_scores = cross_validate(
-        xgb_model, X_train, y_train,
-        cv=CV_FOLDS,
-        scoring=['accuracy', 'precision', 'recall', 'f1', 'roc_auc'],
-        return_train_score=False
-    )
     
-    logger.info("Cross-Validation Results:")
-    for metric in ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']:
-        scores = cv_scores[f'test_{metric}']
-        logger.info(f"  {metric.upper()}: {scores.mean():.4f} (+/- {scores.std():.4f})")
+    # Note: cross_validate ไม่รองรับ sample_weight โดยตรง
+    # ถ้าใช้ sample_weight จะต้อง skip CV หรือใช้ manual CV
+    if sample_weight is None:
+        cv_scores = cross_validate(
+            xgb_model, X_train, y_train,
+            cv=CV_FOLDS,
+            scoring=['accuracy', 'precision', 'recall', 'f1', 'roc_auc'],
+            return_train_score=False
+        )
+        
+        logger.info("Cross-Validation Results:")
+        for metric in ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']:
+            scores = cv_scores[f'test_{metric}']
+            logger.info(f"  {metric.upper()}: {scores.mean():.4f} (+/- {scores.std():.4f})")
+    else:
+        logger.warning("Skipping Cross-Validation when using sample_weight")
+        logger.warning("(sklearn's cross_validate doesn't support sample_weight for XGBoost)")
+        cv_scores = None
     
     # Train บน train set ทั้งหมด
     logger.info("Training on full training set...")
-    xgb_model.fit(X_train, y_train)
+    if sample_weight is not None:
+        xgb_model.fit(X_train, y_train, sample_weight=sample_weight)
+    else:
+        xgb_model.fit(X_train, y_train)
     
     # Evaluate บน validation set
     logger.info("Evaluating on validation set...")
@@ -223,6 +244,9 @@ def save_models(lr_model, xgb_model, preprocessor_lr, preprocessor_xgb, models_d
         f.write(f"  XGBoost: FixedBinnerForXGBoost (Label Encoding)\n")
         f.write(f"\nImbalanced Data Handling:\n")
         f.write(f"  Resampling Method: {RESAMPLING_METHOD}\n")
+        f.write(f"  Cost-Sensitive Learning: {USE_COST_SENSITIVE}\n")
+        if USE_COST_SENSITIVE:
+            f.write(f"  Cost Ratio: {COST_RATIO}\n")
     logger.info(f"Saved run info to {info_path}")
 
 
@@ -300,11 +324,25 @@ if __name__ == "__main__":
     # ใช้ resampler เดียวกันกับ LR
     X_train_xgb_resampled, y_train_xgb_resampled = resampler(X_train_xgb, y_train)
     
+    # Create sample weights for cost-sensitive learning (if enabled)
+    sample_weights_xgb = None
+    if USE_COST_SENSITIVE:
+        logger.info("="*70)
+        logger.info("COST-SENSITIVE LEARNING ENABLED")
+        logger.info("="*70)
+        logger.info(f"Creating sample weights with cost_ratio={COST_RATIO}")
+        sample_weights_xgb = get_sample_weights(
+            y_train_xgb_resampled, 
+            method='cost_ratio', 
+            cost_ratio=COST_RATIO
+        )
+    
     # Train XGBoost
     xgb_model, xgb_cv, xgb_val_metrics, xgb_test_metrics = train_xgboost(
         X_train_xgb_resampled, y_train_xgb_resampled,
         X_val_xgb, y_val,
-        X_test_xgb, y_test
+        X_test_xgb, y_test,
+        sample_weight=sample_weights_xgb
     )
     
     # Save models
