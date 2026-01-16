@@ -37,6 +37,8 @@
 
 ### Test Set Performance
 
+**XGBoost Performance:**
+
 | Run  | Model                                                       | XGB<br>Accuracy | XGB<br>Precision | XGB<br>Recall | XGB<br>F1  | XGB<br>ROC-AUC |
 | ---- | ----------------------------------------------------------- | --------------- | ---------------- | ------------- | ---------- | -------------- |
 | #1   | Baseline<br>(OneHot for both)                               | 0.6887          | 0.3501           | 0.6144        | 0.4460     | 0.7279         |
@@ -47,6 +49,21 @@
 | #4   | ADASYN Resampling<br>(OneHot for LR, Label for XGB)         | 0.7980          | 0.5041           | 0.6013        | 0.5484     | 0.8106         |
 | #5   | SMOTETomek Resampling<br>(OneHot for LR, Label for XGB)     | **0.8033**      | **0.5153**       | 0.6046        | 0.5564     | 0.8121         |
 | #6   | Cost-Sensitive Learning<br>(cost_ratio=10.0)                | 0.5107          | 0.2838           | **0.9183**    | 0.4336     | 0.8220         |
+
+**Logistic Regression Performance:**
+
+| Run  | Model                                                       | LR<br>Accuracy | LR<br>Precision | LR<br>Recall | LR<br>F1   | LR<br>ROC-AUC |
+| ---- | ----------------------------------------------------------- | -------------- | --------------- | ------------ | ---------- | ------------- |
+| #1   | Baseline<br>(OneHot for both)                               | **0.7147**     | **0.3887**      | **0.6961**   | **0.4988** | **0.7621**    |
+| #2   | Separate Preprocessing<br>(OneHot for LR, Label for XGB) ⭐ | 0.7147         | 0.3887          | 0.6961       | 0.4988     | 0.7621        |
+| #2.1 | + Hyperparameter Tuning 🚀                                  | 0.7147         | 0.3887          | 0.6961       | 0.4988     | 0.7621        |
+| #2.2 | + Threshold 0.54 🎯                                         | 0.7147         | 0.3887          | 0.6961       | 0.4988     | 0.7621        |
+| #3   | SMOTE Resampling<br>(OneHot for LR, Label for XGB)          | 0.6980         | 0.3708          | 0.6895       | 0.4823     | 0.7600        |
+| #4   | ADASYN Resampling<br>(OneHot for LR, Label for XGB)         | 0.6927         | 0.3697          | 0.7190       | 0.4883     | 0.7617        |
+| #5   | SMOTETomek Resampling<br>(OneHot for LR, Label for XGB)     | 0.6980         | 0.3708          | 0.6895       | 0.4823     | 0.7600        |
+| #6   | Cost-Sensitive Learning<br>(cost_ratio=10.0)                | 0.7147         | 0.3887          | 0.6961       | 0.4988     | 0.7621        |
+
+**Note:** LR ใช้ class weights เหมือนกันในทุก runs (ยกเว้น synthetic sampling runs ที่ใช้ SMOTE/ADASYN/SMOTETomek) ดังนั้น performance จึงคล้ายกัน
 
 ### Key Takeaways
 
