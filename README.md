@@ -8,6 +8,8 @@
 
 - **Logistic Regression** (Baseline model)
 - **XGBoost** (High-performance model)
+- **Hyperparameter Tuning** (Optimized model)
+- **Threshold Tuning** (Balanced predictions)
 - **SHAP** สำหรับอธิบายผลการทำนาย
 
 ## 🚀 Quick Start
@@ -18,33 +20,33 @@
 pip install -r requirements.txt
 ```
 
-### 2. รัน Best Model (Run #2)
+### 2. รัน Best Model (Run #2.2 - Hyperparameter Tuned + Threshold 0.54)
 
 ```bash
-# Train models with separate preprocessing (แนะนำ!)
-python train_models.py --version 2
+# Train models with optimized hyperparameters
+python train_models.py
 
 # สร้าง visualizations
-python evaluate_models.py --version 2
+python evaluate_models.py
 
 # วิเคราะห์ด้วย SHAP
-python shap_analysis.py --version 2
+python shap_analysis.py
 ```
 
-### 3. ทดลอง Imbalance Handling อื่นๆ (Optional)
+### 3. ทดลอง Approaches อื่นๆ (Optional)
 
 ```bash
-# Run #3: SMOTE
-python train_models.py --version 3 --imbalance-method smote
+# Hyperparameter Tuning
+python hyperparameter_tuning.py
 
-# Run #4: ADASYN
-python train_models.py --version 4 --imbalance-method adasyn
+# Threshold Tuning
+python threshold_tuning.py
 
-# Run #5: SMOTETomek
-python train_models.py --version 5 --imbalance-method smotetomek
+# Cost-Sensitive Learning
+python train_models.py --cost-sensitive
 ```
 
-**หมายเหตุ:** Run #2 (Class Weights) ให้ผลดีที่สุด - ไม่แนะนำให้ใช้ synthetic sampling!
+**หมายเหตุ:** Run #2.2 (Hyperparameter Tuned + Threshold 0.54) ให้ผลดีที่สุด!
 
 ## 📁 โครงสร้างโปรเจกต์
 
@@ -60,18 +62,23 @@ Customer Churn Prediction/
 │
 ├── feature_binning.py           # Custom transformers สำหรับ binning
 ├── imbalance_handlers.py        # SMOTE, ADASYN, SMOTETomek handlers
+├── cost_sensitive.py            # Cost-sensitive learning utilities
 ├── data_prep.py                 # Data preparation pipeline
-├── train_models.py              # Model training script (รองรับ versioning)
+├── train_models.py              # Model training script
 ├── evaluate_models.py           # Evaluation & visualization
 ├── shap_analysis.py             # SHAP explainability
-├── test_pipeline.py             # Pipeline testing
+├── hyperparameter_tuning.py     # Hyperparameter optimization
+├── threshold_tuning.py          # Threshold optimization
 │
 ├── models/                      # Trained models (แยกตาม run)
 │   ├── run_1/                   # Baseline (OneHot for both)
-│   ├── run_2/                   # Separate Preprocessing ⭐ Best!
+│   ├── run_2/                   # Separate Preprocessing
+│   ├── run_2.2/                 # ⭐ Best! (Hyperparameter + Threshold)
+│   ├── run_2_tuned/             # Hyperparameter tuning results
 │   ├── run_3/                   # SMOTE Resampling
 │   ├── run_4/                   # ADASYN Resampling
-│   └── run_5/                   # SMOTETomek Resampling
+│   ├── run_5/                   # SMOTETomek Resampling
+│   └── run_6/                   # Cost-Sensitive Learning
 │       ├── logistic_regression.pkl
 │       ├── xgboost.pkl
 │       ├── preprocessor_lr.pkl
@@ -79,10 +86,12 @@ Customer Churn Prediction/
 │
 ├── plots/                       # Visualizations (แยกตาม run)
 │   ├── run_1/
-│   ├── run_2/                   # ⭐ Best model visualizations
+│   ├── run_2/
+│   ├── run_2.2/                 # ⭐ Best model visualizations
 │   ├── run_3/
 │   ├── run_4/
-│   └── run_5/
+│   ├── run_5/
+│   └── run_6/
 │       ├── confusion_matrix_lr.png
 │       ├── confusion_matrix_xgb.png
 │       ├── roc_curves.png
@@ -95,9 +104,24 @@ Customer Churn Prediction/
 │       ├── shap_waterfall_churn.png
 │       └── shap_dependence_top.png
 │
+├── experiments/                 # Experiment results
+│   └── run_2.1_threshold_tuning/
+│       ├── threshold_results.csv
+│       └── threshold_tuning_analysis.png
+│
 └── Doc/
+    ├── runs/                    # รายละเอียดแต่ละ run
+    │   ├── README.md
+    │   ├── run_01_baseline.md
+    │   ├── run_02_class_weights.md
+    │   ├── run_02.2_threshold_tuned.md  # ⭐ Best model details
+    │   ├── run_03_smote.md
+    │   ├── run_04_adasyn.md
+    │   ├── run_05_smotetomek.md
+    │   └── run_06_cost_sensitive.md
     ├── walkthrough.md           # คู่มือการใช้งานโดยละเอียด
-    └── RESULTS.md               # บันทึกผลการทดลองทั้ง 5 runs
+    ├── RESULTS.md               # บันทึกผลการทดลองทั้งหมด
+    └── COST_SENSITIVE_GUIDE.md  # คู่มือ Cost-Sensitive Learning
 ```
 
 ## 🎯 Features
@@ -112,21 +136,38 @@ Customer Churn Prediction/
   - **XGBoost:** Label encoding (10 features) - ดีกว่า OneHot!
 - ✅ Train/Val/Test split (70/15/15) แบบ stratified
 
-### Imbalance Handling (Tested 4 Approaches)
+### Model Optimization
 
-- ✅ **Class Weights** (Run #2) - ⭐ **Best approach!**
-  - Logistic Regression: `class_weight='balanced'`
-  - XGBoost: `scale_pos_weight=3.9088`
-- ✅ **SMOTE** (Run #3) - Synthetic over-sampling
-- ✅ **ADASYN** (Run #4) - Adaptive synthetic sampling
-- ✅ **SMOTETomek** (Run #5) - Hybrid over/under-sampling
+- ✅ **Hyperparameter Tuning** (Run #2.1)
+  - RandomizedSearchCV with 50 iterations
+  - Custom scorer (Recall 60% + F1 40%)
+  - Best params: n_estimators=50, max_depth=3, learning_rate=0.1
+- ✅ **Threshold Tuning** (Run #2.2)
 
-**สรุป:** Class Weights ให้ผลดีที่สุด - Synthetic sampling ทุกวิธีสร้าง overfitting!
+  - Tested thresholds from 0.1 to 0.99
+  - Optimal threshold: 0.54 for best balance
+  - Maximizes F1 Score while maintaining Recall >= 70%
+
+- ✅ **Cost-Sensitive Learning** (Run #6)
+  - Sample weighting for imbalanced data
+  - Extreme Recall (91.83%) for special campaigns
+
+### Imbalance Handling (Tested 5 Approaches)
+
+- ✅ **Class Weights** (Run #2) - Good baseline
+- ✅ **Hyperparameter Tuning** (Run #2.1) - High Recall
+- ✅ **Threshold Tuning** (Run #2.2) - ⭐ **Most Balanced!**
+- ✅ **SMOTE** (Run #3) - Overfitting
+- ✅ **ADASYN** (Run #4) - Overfitting
+- ✅ **SMOTETomek** (Run #5) - Overfitting
+- ✅ **Cost-Sensitive** (Run #6) - Extreme Recall
+
+**สรุป:** Hyperparameter Tuning + Threshold 0.54 ให้ผลดีที่สุด!
 
 ### Model Training
 
 - ✅ Logistic Regression with `class_weight='balanced'`
-- ✅ XGBoost with `scale_pos_weight` และ Label Encoding
+- ✅ XGBoost with optimized hyperparameters
 - ✅ 5-Fold Cross-Validation
 - ✅ Comprehensive metrics (Accuracy, Precision, Recall, F1, ROC-AUC)
 - ✅ **Versioned runs** - บันทึกผลทุก experiment
@@ -147,59 +188,86 @@ Customer Churn Prediction/
 
 ดูผลการทดลองโดยละเอียดได้ที่ [Doc/RESULTS.md](Doc/RESULTS.md)
 
-### 🏆 Best Model: Run #2 (Separate Preprocessing + Class Weights)
+### 🏆 Best Model: Run #2.2 (Hyperparameter Tuned + Threshold 0.54)
 
 **XGBoost Performance (Test Set):**
 
-| Metric        | Score      | Status           |
-| ------------- | ---------- | ---------------- |
-| **ROC-AUC**   | **0.8379** | ✅ เกินเป้า 0.80 |
-| **Recall**    | **0.6895** | ✅ ใกล้เป้า 0.70 |
-| **Precision** | **0.4862** | ⚠️ ต่ำกว่าเป้า   |
-| **F1 Score**  | **0.5703** | ✅ ใกล้เป้า 0.65 |
-| **Accuracy**  | **0.7880** | ✅ ดี            |
+| Metric        | Score      | Status                         |
+| ------------- | ---------- | ------------------------------ |
+| **F1 Score**  | **0.5811** | 🏆 **สูงสุด!**                 |
+| **ROC-AUC**   | **0.8461** | ✅ เกินเป้า 0.80               |
+| **Recall**    | **0.7026** | ✅ เกินเป้า 0.70               |
+| **Precision** | **0.4954** | ✅ สูงสุดในกลุ่ม Recall >= 70% |
+| **Accuracy**  | **0.7933** | ✅ ดีมาก                       |
+
+**Optimized Hyperparameters:**
+
+- `n_estimators`: 50
+- `max_depth`: 3
+- `learning_rate`: 0.1
+- `subsample`: 0.6
+- `reg_lambda`: 0.1
+- `reg_alpha`: 0.5
+- `threshold`: 0.54
 
 **Top 3 Features (SHAP Analysis):**
 
-1. **Balance** - ยอดเงินในบัญชี (สำคัญที่สุด!)
-2. **NumOfProducts** - จำนวน products (3-4 = Churn สูง, 2 = ดีที่สุด)
-3. **IsActiveMember** - ลูกค้า Active หรือไม่ (ไม่ Active = Churn สูงมาก)
+1. **Balance** (0.7238) - ยอดเงินในบัญชี (สำคัญที่สุด!)
+2. **NumOfProducts** (0.6868) - จำนวน products (3-4 = Churn สูง, 2 = ดีที่สุด)
+3. **IsActiveMember** (0.3250) - ลูกค้า Active หรือไม่ (ไม่ Active = Churn สูงมาก)
 
-### 📊 เปรียบเทียบทั้ง 5 Runs
+### 📊 เปรียบเทียบทั้งหมด (Top 5)
 
-| Run | Method                 | ROC-AUC    | Recall     | Precision  | Ranking     |
-| --- | ---------------------- | ---------- | ---------- | ---------- | ----------- |
-| #2  | **Class Weights** ⭐   | **0.8379** | **0.6895** | 0.4862     | 🥇 **Best** |
-| #3  | SMOTE                  | 0.8170     | 0.6144     | 0.5123     | 🥈 2nd      |
-| #5  | SMOTETomek             | 0.8121     | 0.6046     | **0.5153** | 🥉 3rd      |
-| #4  | ADASYN                 | 0.8106     | 0.6013     | 0.5041     | 4th         |
-| #1  | Baseline (OneHot both) | 0.7279     | 0.6144     | 0.3501     | 5th         |
+| Run  | Method                         | ROC-AUC    | Recall     | Precision  | F1         | Ranking           |
+| ---- | ------------------------------ | ---------- | ---------- | ---------- | ---------- | ----------------- |
+| #2.2 | **Hyperparameter + T=0.54** ⭐ | **0.8461** | **0.7026** | **0.4954** | **0.5811** | 🥇 **Best**       |
+| #2.1 | Hyperparameter Tuned           | **0.8461** | **0.7451** | 0.4740     | 0.5794     | 🥈 High Recall    |
+| #2   | Class Weights                  | 0.8379     | 0.6895     | 0.4862     | 0.5703     | 🥉 Baseline       |
+| #6   | Cost-Sensitive                 | 0.8220     | **0.9183** | 0.2838     | 0.4336     | 🎯 Extreme Recall |
+| #3   | SMOTE                          | 0.8170     | 0.6144     | 0.5123     | 0.5587     | 4th               |
 
 **💡 Key Findings:**
 
-1. **Separate Preprocessing** ทำให้ XGBoost ดีขึ้น **15%** ใน ROC-AUC (Run #1 → #2)
-2. **Class Weights ดีที่สุด** - Synthetic sampling ทุกวิธีสร้าง overfitting
-3. **Label Encoding เหมาะกับ XGBoost** มากกว่า OneHot Encoding
-4. **Recall เป้าหมายสำคัญ** - Run #2 ให้ Recall สูงสุด (68.95%)
+1. **Hyperparameter Tuning** เพิ่ม Recall จาก 68.95% → 74.51% (+5.56 pp)
+2. **Threshold 0.54** ให้ F1 Score สูงสุด (58.11%) และ Balance ดีที่สุด
+3. **ROC-AUC = 84.61%** สูงสุด (เกินเป้าหมาย 80%)
+4. **Recall = 70.26%** เกินเป้าหมาย 70% พอดี
+5. **Synthetic sampling ทุกวิธีสร้าง overfitting** - ไม่แนะนำ!
 
-### 🎯 Business Impact (Run #2)
+### 🎯 Business Impact (Run #2.2)
 
-- **ประหยัดได้:** 12.5 ล้านบาท/ปี (จากลูกค้า 2,000 คน)
-- **ROI:** 4,849% 🚀
-- **รักษาลูกค้าไว้ได้:** 64 คน (มูลค่า 6.4 ล้านบาท)
+- **ประหยัดได้:** 12.78 ล้านบาท/ปี (จากลูกค้า 2,000 คน)
+- **ROI:** 5,789% 🚀 (สูงสุด!)
+- **รักษาลูกค้าไว้ได้:** 65 คน (มูลค่า 6.5 ล้านบาท)
 - **Churn Rate ลดลง:** จาก 15.3% → 12.1%
+- **ต้นทุนต่ำสุด:** 217,000 บาท (ติดต่อ 434 คน)
+
+### 🎯 Model Selection Guide
+
+**สำหรับธนาคาร:**
+
+- **ธนาคารทั่วไป (ต้องการ Balance)** → Run #2.2 ⭐ **แนะนำ!**
+  - F1 Score สูงสุด, Balance ดีที่สุด, ROI สูงสุด
+- **ธนาคารที่ต้องการ Recall สูง** → Run #2.1 🚀
+  - Recall = 74.51%, ROC-AUC = 84.61%
+- **ธนาคารที่ต้องการ Simplicity** → Run #2
+  - ใช้ default hyperparameters, ผลลัพธ์ดี
+- **Campaign พิเศษ (ยอมรับ False Positive สูง)** → Run #6 🎯
+  - Recall = 91.83% (สูงสุด!)
 
 ## 📖 เอกสาร
 
 - **[Walkthrough](Doc/walkthrough.md)** - คู่มือการใช้งานโดยละเอียด
 - **[Results](Doc/RESULTS.md)** - ผลการทดลองและ metrics แต่ละรอบ
+- **[Run #2.2 Details](Doc/runs/run_02.2_threshold_tuned.md)** - รายละเอียด Best Model
+- **[Cost-Sensitive Guide](Doc/COST_SENSITIVE_GUIDE.md)** - คู่มือ Cost-Sensitive Learning
 
 ## 🛠️ Technologies
 
-- Python 3.x
+- Python 3.12
 - **Machine Learning:**
-  - scikit-learn - Logistic Regression, preprocessing
-  - XGBoost - Gradient boosting
+  - scikit-learn - Logistic Regression, preprocessing, GridSearchCV
+  - XGBoost - Gradient boosting with hyperparameter tuning
   - imbalanced-learn - SMOTE, ADASYN, SMOTETomek
 - **Explainability:**
   - SHAP - Model interpretation
@@ -215,3 +283,9 @@ This project is for educational purposes.
 ## 👤 Author
 
 Created as part of a Customer Churn Prediction project.
+
+**Last Updated:** 2026-01-16
+
+**Total Experiments:** 8 Runs (6 main + Hyperparameter Tuning + Threshold Tuning)
+
+**Best Model:** Run #2.2 - Hyperparameter Tuned + Threshold 0.54 ⭐

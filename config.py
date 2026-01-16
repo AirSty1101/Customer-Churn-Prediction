@@ -34,7 +34,7 @@ MODELS_DIR = "models"  # โฟลเดอร์เก็บ trained models
 PLOTS_DIR = "plots"    # โฟลเดอร์เก็บ visualizations
 
 # Run Number (เปลี่ยนทุกครั้งที่รัน experiment ใหม่)
-RUN_NUMBER = 2 
+RUN_NUMBER = 2.2 
 
 # === Imbalanced Data Handling ===
 # Options: 'none', 'smote', 'adasyn', 'smote_tomek', 'smote_enn'
@@ -54,11 +54,7 @@ COST_RATIO = 10.0  # น้ำหนักของ minority class (Churn) เ�
                              
 # === Prediction Threshold ===
 # Threshold สำหรับการทำนาย (default = 0.5)
-PREDICTION_THRESHOLD = 0.48  # Threshold tuning result: 0.48 ให้ Recall >= 70%
-                             # Options:
-                             # - 0.48: Recall = 70.59%, Precision = 48.32% (แนะนำ!)
-                             # - 0.50: Recall = 68.95%, Precision = 48.62% (default)
-                             # - 0.60: Recall = 61.11%, Precision = 55.49% (Best F1)
+PREDICTION_THRESHOLD = 0.54 
                               
 # Cross-Validation
 CV_FOLDS = 5
@@ -68,9 +64,15 @@ LR_MAX_ITER = 1000
 LR_SOLVER = 'lbfgs'
 
 # XGBoost
-XGB_N_ESTIMATORS = 100
-XGB_MAX_DEPTH = 6
+XGB_N_ESTIMATORS = 50
+XGB_MAX_DEPTH = 3
 XGB_LEARNING_RATE = 0.1
 XGB_RANDOM_STATE = 42
+XGB_SUBSAMPLE = 0.6
+XGB_REG_LAMBDA = 0.1
+XGB_REG_ALPHA = 0.5
+XGB_MIN_CHILD_WEIGHT = 5
+XGB_GAMMA = 0.2
+XGB_COLSAMPLE_BYTREE = 0.8
 
 
