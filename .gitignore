@@ -5,3 +5,4 @@ models/
 *.txt
 !requirements.txt
 *.png
+experiments/

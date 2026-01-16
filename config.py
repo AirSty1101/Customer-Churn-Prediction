@@ -34,7 +34,7 @@ MODELS_DIR = "models"  # โฟลเดอร์เก็บ trained models
 PLOTS_DIR = "plots"    # โฟลเดอร์เก็บ visualizations
 
 # Run Number (เปลี่ยนทุกครั้งที่รัน experiment ใหม่)
-RUN_NUMBER = 6 
+RUN_NUMBER = 2 
 
 # === Imbalanced Data Handling ===
 # Options: 'none', 'smote', 'adasyn', 'smote_tomek', 'smote_enn'
@@ -52,6 +52,14 @@ COST_RATIO = 10.0  # น้ำหนักของ minority class (Churn) เ�
                    # ค่าที่แนะนำ: 5.0, 10.0, 15.0, 20.0
                    # ยิ่งสูง = ยิ่ง focus ที่ Recall (ลด False Negative)
                              
+# === Prediction Threshold ===
+# Threshold สำหรับการทำนาย (default = 0.5)
+PREDICTION_THRESHOLD = 0.48  # Threshold tuning result: 0.48 ให้ Recall >= 70%
+                             # Options:
+                             # - 0.48: Recall = 70.59%, Precision = 48.32% (แนะนำ!)
+                             # - 0.50: Recall = 68.95%, Precision = 48.62% (default)
+                             # - 0.60: Recall = 61.11%, Precision = 55.49% (Best F1)
+                              
 # Cross-Validation
 CV_FOLDS = 5
 
