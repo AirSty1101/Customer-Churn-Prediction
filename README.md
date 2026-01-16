@@ -1,39 +1,39 @@
 # Customer Churn Prediction
 
-ระบบทำนายการหยุดใช้บริการของลูกค้าธนาคาร (Customer Churn) โดยใช้ Machine Learning
+A Machine Learning system to predict customer churn for banking services
 
-## 📊 ภาพรวมโปรเจกต์
+## 📊 Project Overview
 
-โปรเจกต์นี้ใช้ข้อมูลลูกค้าธนาคารเพื่อทำนายว่าลูกค้าคนไหนมีแนวโน้มจะหยุดใช้บริการ (Churn) โดยใช้:
+This project uses bank customer data to predict which customers are likely to churn (stop using services) using:
 
 - **Logistic Regression** (Baseline model)
 - **XGBoost** (High-performance model)
 - **Hyperparameter Tuning** (Optimized model)
 - **Threshold Tuning** (Balanced predictions)
-- **SHAP** สำหรับอธิบายผลการทำนาย
+- **SHAP** for model interpretability
 
 ## 🚀 Quick Start
 
-### 1. ติดตั้ง Dependencies
+### 1. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. รัน Best Model (Run #2.2 - Hyperparameter Tuned + Threshold 0.54)
+### 2. Run Best Model (Run #2.2 - Hyperparameter Tuned + Threshold 0.54)
 
 ```bash
 # Train models with optimized hyperparameters
 python train_models.py
 
-# สร้าง visualizations
+# Generate visualizations
 python evaluate_models.py
 
-# วิเคราะห์ด้วย SHAP
+# Analyze with SHAP
 python shap_analysis.py
 ```
 
-### 3. ทดลอง Approaches อื่นๆ (Optional)
+### 3. Try Other Approaches (Optional)
 
 ```bash
 # Hyperparameter Tuning
@@ -46,21 +46,21 @@ python threshold_tuning.py
 python train_models.py --cost-sensitive
 ```
 
-**หมายเหตุ:** Run #2.2 (Hyperparameter Tuned + Threshold 0.54) ให้ผลดีที่สุด!
+**Note:** Run #2.2 (Hyperparameter Tuned + Threshold 0.54) gives the best results!
 
-## 📁 โครงสร้างโปรเจกต์
+## 📁 Project Structure
 
 ```
 Customer Churn Prediction/
-├── README.md                    # ไฟล์นี้
+├── README.md                    # This file
 ├── requirements.txt             # Python dependencies
-├── config.py                    # Configuration และ hyperparameters
+├── config.py                    # Configuration and hyperparameters
 ├── logger_config.py             # Logging setup
 │
 ├── data/
-│   └── Churn_Modelling.csv     # Dataset (10,000 ลูกค้า)
+│   └── Churn_Modelling.csv     # Dataset (10,000 customers)
 │
-├── feature_binning.py           # Custom transformers สำหรับ binning
+├── feature_binning.py           # Custom transformers for binning
 ├── imbalance_handlers.py        # SMOTE, ADASYN, SMOTETomek handlers
 ├── cost_sensitive.py            # Cost-sensitive learning utilities
 ├── data_prep.py                 # Data preparation pipeline
@@ -70,7 +70,7 @@ Customer Churn Prediction/
 ├── hyperparameter_tuning.py     # Hyperparameter optimization
 ├── threshold_tuning.py          # Threshold optimization
 │
-├── models/                      # Trained models (แยกตาม run)
+├── models/                      # Trained models (separated by run)
 │   ├── run_1/                   # Baseline (OneHot for both)
 │   ├── run_2/                   # Separate Preprocessing
 │   ├── run_2.2/                 # ⭐ Best! (Hyperparameter + Threshold)
@@ -84,7 +84,7 @@ Customer Churn Prediction/
 │       ├── preprocessor_lr.pkl
 │       └── preprocessor_xgb.pkl
 │
-├── plots/                       # Visualizations (แยกตาม run)
+├── plots/                       # Visualizations (separated by run)
 │   ├── run_1/
 │   ├── run_2/
 │   ├── run_2.2/                 # ⭐ Best model visualizations
@@ -110,7 +110,7 @@ Customer Churn Prediction/
 │       └── threshold_tuning_analysis.png
 │
 └── Doc/
-    ├── runs/                    # รายละเอียดแต่ละ run
+    ├── runs/                    # Detailed run documentation
     │   ├── README.md
     │   ├── run_01_baseline.md
     │   ├── run_02_class_weights.md
@@ -119,22 +119,22 @@ Customer Churn Prediction/
     │   ├── run_04_adasyn.md
     │   ├── run_05_smotetomek.md
     │   └── run_06_cost_sensitive.md
-    ├── walkthrough.md           # คู่มือการใช้งานโดยละเอียด
-    ├── RESULTS.md               # บันทึกผลการทดลองทั้งหมด
-    └── COST_SENSITIVE_GUIDE.md  # คู่มือ Cost-Sensitive Learning
+    ├── walkthrough.md           # Detailed user guide
+    ├── RESULTS.md               # All experiment results
+    └── COST_SENSITIVE_GUIDE.md  # Cost-Sensitive Learning guide
 ```
 
 ## 🎯 Features
 
 ### Data Preparation
 
-- ✅ Error handling และ validation
+- ✅ Error handling and validation
 - ✅ DEBUG-level logging
 - ✅ Feature binning (Age, CreditScore, Tenure, Balance)
 - ✅ **Separate preprocessing pipelines:**
   - **Logistic Regression:** OneHot encoding (25 features)
-  - **XGBoost:** Label encoding (10 features) - ดีกว่า OneHot!
-- ✅ Train/Val/Test split (70/15/15) แบบ stratified
+  - **XGBoost:** Label encoding (10 features) - Better than OneHot!
+- ✅ Train/Val/Test split (70/15/15) with stratification
 
 ### Model Optimization
 
@@ -152,7 +152,7 @@ Customer Churn Prediction/
   - Sample weighting for imbalanced data
   - Extreme Recall (91.83%) for special campaigns
 
-### Imbalance Handling (Tested 5 Approaches)
+### Imbalance Handling (Tested 7 Approaches)
 
 - ✅ **Class Weights** (Run #2) - Good baseline
 - ✅ **Hyperparameter Tuning** (Run #2.1) - High Recall
@@ -162,7 +162,7 @@ Customer Churn Prediction/
 - ✅ **SMOTETomek** (Run #5) - Overfitting
 - ✅ **Cost-Sensitive** (Run #6) - Extreme Recall
 
-**สรุป:** Hyperparameter Tuning + Threshold 0.54 ให้ผลดีที่สุด!
+**Conclusion:** Hyperparameter Tuning + Threshold 0.54 gives the best results!
 
 ### Model Training
 
@@ -170,35 +170,35 @@ Customer Churn Prediction/
 - ✅ XGBoost with optimized hyperparameters
 - ✅ 5-Fold Cross-Validation
 - ✅ Comprehensive metrics (Accuracy, Precision, Recall, F1, ROC-AUC)
-- ✅ **Versioned runs** - บันทึกผลทุก experiment
+- ✅ **Versioned runs** - Track all experiments
 
 ### Evaluation & Explainability
 
-- ✅ Confusion Matrix (แยก LR และ XGB)
-- ✅ ROC Curves (เปรียบเทียบ LR vs XGB)
+- ✅ Confusion Matrix (separate for LR and XGB)
+- ✅ ROC Curves (compare LR vs XGB)
 - ✅ Precision-Recall Curves
-- ✅ Feature Importance (LR coefficients และ XGB weights)
+- ✅ Feature Importance (LR coefficients and XGB weights)
 - ✅ **SHAP Analysis:**
-  - Summary Plot - ภาพรวม feature importance
+  - Summary Plot - Overall feature importance
   - Bar Plot - Mean absolute SHAP values
-  - Waterfall Plots - อธิบายการทำนายแต่ละลูกค้า
-  - Dependence Plot - ความสัมพันธ์ระหว่าง features
+  - Waterfall Plots - Explain individual predictions
+  - Dependence Plot - Feature relationships
 
-## 📊 ผลลัพธ์
+## 📊 Results
 
-ดูผลการทดลองโดยละเอียดได้ที่ [Doc/RESULTS.md](Doc/RESULTS.md)
+See detailed experiment results at [Doc/RESULTS.md](Doc/RESULTS.md)
 
 ### 🏆 Best Model: Run #2.2 (Hyperparameter Tuned + Threshold 0.54)
 
 **XGBoost Performance (Test Set):**
 
-| Metric        | Score      | Status                         |
-| ------------- | ---------- | ------------------------------ |
-| **F1 Score**  | **0.5811** | 🏆 **สูงสุด!**                 |
-| **ROC-AUC**   | **0.8461** | ✅ เกินเป้า 0.80               |
-| **Recall**    | **0.7026** | ✅ เกินเป้า 0.70               |
-| **Precision** | **0.4954** | ✅ สูงสุดในกลุ่ม Recall >= 70% |
-| **Accuracy**  | **0.7933** | ✅ ดีมาก                       |
+| Metric        | Score      | Status                            |
+| ------------- | ---------- | --------------------------------- |
+| **F1 Score**  | **0.5811** | 🏆 **Highest!**                   |
+| **ROC-AUC**   | **0.8461** | ✅ Exceeds target 0.80            |
+| **Recall**    | **0.7026** | ✅ Exceeds target 0.70            |
+| **Precision** | **0.4954** | ✅ Highest in Recall >= 70% group |
+| **Accuracy**  | **0.7933** | ✅ Excellent                      |
 
 **Optimized Hyperparameters:**
 
@@ -212,11 +212,11 @@ Customer Churn Prediction/
 
 **Top 3 Features (SHAP Analysis):**
 
-1. **Balance** (0.7238) - ยอดเงินในบัญชี (สำคัญที่สุด!)
-2. **NumOfProducts** (0.6868) - จำนวน products (3-4 = Churn สูง, 2 = ดีที่สุด)
-3. **IsActiveMember** (0.3250) - ลูกค้า Active หรือไม่ (ไม่ Active = Churn สูงมาก)
+1. **Balance** (0.7238) - Account balance (Most important!)
+2. **NumOfProducts** (0.6868) - Number of products (3-4 = High churn, 2 = Best)
+3. **IsActiveMember** (0.3250) - Active customer status (Inactive = High churn)
 
-### 📊 เปรียบเทียบทั้งหมด (Top 5)
+### 📊 Comparison (Top 5 Runs)
 
 | Run  | Method                         | ROC-AUC    | Recall     | Precision  | F1         | Ranking           |
 | ---- | ------------------------------ | ---------- | ---------- | ---------- | ---------- | ----------------- |
@@ -228,39 +228,39 @@ Customer Churn Prediction/
 
 **💡 Key Findings:**
 
-1. **Hyperparameter Tuning** เพิ่ม Recall จาก 68.95% → 74.51% (+5.56 pp)
-2. **Threshold 0.54** ให้ F1 Score สูงสุด (58.11%) และ Balance ดีที่สุด
-3. **ROC-AUC = 84.61%** สูงสุด (เกินเป้าหมาย 80%)
-4. **Recall = 70.26%** เกินเป้าหมาย 70% พอดี
-5. **Synthetic sampling ทุกวิธีสร้าง overfitting** - ไม่แนะนำ!
+1. **Hyperparameter Tuning** increased Recall from 68.95% → 74.51% (+5.56 pp)
+2. **Threshold 0.54** achieves highest F1 Score (58.11%) with best balance
+3. **ROC-AUC = 84.61%** - Highest (exceeds 80% target)
+4. **Recall = 70.26%** - Exceeds 70% target perfectly
+5. **Synthetic sampling causes overfitting** - Not recommended!
 
 ### 🎯 Business Impact (Run #2.2)
 
-- **ประหยัดได้:** 12.78 ล้านบาท/ปี (จากลูกค้า 2,000 คน)
-- **ROI:** 5,789% 🚀 (สูงสุด!)
-- **รักษาลูกค้าไว้ได้:** 65 คน (มูลค่า 6.5 ล้านบาท)
-- **Churn Rate ลดลง:** จาก 15.3% → 12.1%
-- **ต้นทุนต่ำสุด:** 217,000 บาท (ติดต่อ 434 คน)
+- **Cost Savings:** 12.78M THB/year (from 2,000 customers)
+- **ROI:** 5,789% 🚀 (Highest!)
+- **Customers Retained:** 65 customers (worth 6.5M THB)
+- **Churn Rate Reduction:** From 15.3% → 12.1%
+- **Lowest Cost:** 217,000 THB (contact 434 customers)
 
 ### 🎯 Model Selection Guide
 
-**สำหรับธนาคาร:**
+**For Banks:**
 
-- **ธนาคารทั่วไป (ต้องการ Balance)** → Run #2.2 ⭐ **แนะนำ!**
-  - F1 Score สูงสุด, Balance ดีที่สุด, ROI สูงสุด
-- **ธนาคารที่ต้องการ Recall สูง** → Run #2.1 🚀
+- **General Banks (Need Balance)** → Run #2.2 ⭐ **Recommended!**
+  - Highest F1 Score, Best balance, Highest ROI
+- **Banks Needing High Recall** → Run #2.1 🚀
   - Recall = 74.51%, ROC-AUC = 84.61%
-- **ธนาคารที่ต้องการ Simplicity** → Run #2
-  - ใช้ default hyperparameters, ผลลัพธ์ดี
-- **Campaign พิเศษ (ยอมรับ False Positive สูง)** → Run #6 🎯
-  - Recall = 91.83% (สูงสุด!)
+- **Banks Needing Simplicity** → Run #2
+  - Uses default hyperparameters, good results
+- **Special Campaigns (Accept High False Positives)** → Run #6 🎯
+  - Recall = 91.83% (Highest!)
 
-## 📖 เอกสาร
+## 📖 Documentation
 
-- **[Walkthrough](Doc/walkthrough.md)** - คู่มือการใช้งานโดยละเอียด
-- **[Results](Doc/RESULTS.md)** - ผลการทดลองและ metrics แต่ละรอบ
-- **[Run #2.2 Details](Doc/runs/run_02.2_threshold_tuned.md)** - รายละเอียด Best Model
-- **[Cost-Sensitive Guide](Doc/COST_SENSITIVE_GUIDE.md)** - คู่มือ Cost-Sensitive Learning
+- **[Walkthrough](Doc/walkthrough.md)** - Detailed user guide
+- **[Results](Doc/RESULTS.md)** - All experiment results and metrics
+- **[Run #2.2 Details](Doc/runs/run_02.2_threshold_tuned.md)** - Best model details
+- **[Cost-Sensitive Guide](Doc/COST_SENSITIVE_GUIDE.md)** - Cost-Sensitive Learning guide
 
 ## 🛠️ Technologies
 
